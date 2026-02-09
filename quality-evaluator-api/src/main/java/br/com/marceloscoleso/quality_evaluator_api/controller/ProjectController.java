@@ -4,8 +4,9 @@ import br.com.marceloscoleso.quality_evaluator_api.dto.ProjectDTO;
 import br.com.marceloscoleso.quality_evaluator_api.service.ProjectService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -27,8 +28,8 @@ public class ProjectController {
 
     // Listar projetos
     @GetMapping
-    public List<ProjectDTO> listAll() {
-        return projectService.findAll();
+    public Page<ProjectDTO> listAll(Pageable pageable) {
+        return projectService.findAll(pageable);
     }
 
     // Buscar por ID

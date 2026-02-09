@@ -5,8 +5,10 @@ import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationResponseDTO;
 import br.com.marceloscoleso.quality_evaluator_api.service.EvaluationService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/evaluations")
@@ -28,8 +30,8 @@ public class EvaluationController {
 
     // Listar histórico completo
     @GetMapping
-    public List<EvaluationResponseDTO> findAll() {
-        return evaluationService.findAll();
+    public Page<EvaluationResponseDTO> findAll(Pageable pageable) {
+        return evaluationService.findAll(pageable);
     }
 
     // Buscar por ID

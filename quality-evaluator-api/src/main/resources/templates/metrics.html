@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Code Quality Evaluator | Metrics</title>
+
+    <style>
+        :root {
+            --bg: #0F172A;
+            --card: #020617;
+            --text: #E5E7EB;
+            --muted: #94A3B8;
+            --accent: #38BDF8;
+            --border: #1E293B;
+            --success: #22C55E;
+            --danger: #EF4444;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, system-ui, sans-serif;
+            background: radial-gradient(circle at top, #1E293B, var(--bg));
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+        }
+
+        .container { width: 100%; max-width: 960px; }
+        .header { margin-bottom: 24px; }
+        .project { font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+        .title { font-size: 28px; font-weight: 700; margin-top: 8px; }
+        .subtitle { color: var(--muted); margin-top: 6px; }
+        .card { background: linear-gradient(180deg, #020617, #020617CC); border-radius: 16px; padding: 28px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03); }
+        .metric { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .metric:last-child { border-bottom: none; }
+        .metric-name { font-weight: 500; }
+        .metric-value { font-weight: 700; text-align: right; }
+        .footer { margin-top: 24px; font-size: 12px; color: var(--muted); text-align: right; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="project">Code Quality Evaluator</div>
+        <div class="title">Métricas Disponíveis</div>
+        <div class="subtitle">Todas as métricas do Actuator e do sistema</div>
+    </div>
+
+    <div class="card">
+        <div th:each="entry : ${metrics}" class="metric">
+            <span class="metric-name" th:text="${entry.key}">metric.name</span>
+            <span class="metric-value" th:text="${entry.value}">0</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        © Code Quality Evaluator · Metrics Endpoint
+    </div>
+
+</div>
+
+</body>
+</html>

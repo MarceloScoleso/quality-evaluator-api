@@ -62,6 +62,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
+        @ExceptionHandler(BusinessException.class)
+        public ResponseEntity<ApiError> handleBusiness(
+                BusinessException ex,
+                HttpServletRequest request
+        ) {
+        ApiError error = new ApiError(
+            HttpStatus.BAD_REQUEST.value(),
+            "Business rule violation",
+            ex.getMessage(),
+            request.getRequestURI()
+        );
+                return ResponseEntity.badRequest().body(error);
+        }
+
     // Fallback (500)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(

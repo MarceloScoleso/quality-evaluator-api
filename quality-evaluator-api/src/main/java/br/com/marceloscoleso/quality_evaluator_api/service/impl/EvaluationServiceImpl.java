@@ -10,9 +10,13 @@ import br.com.marceloscoleso.quality_evaluator_api.model.Evaluation;
 import br.com.marceloscoleso.quality_evaluator_api.repository.EvaluationRepository;
 import br.com.marceloscoleso.quality_evaluator_api.service.EvaluationService;
 import br.com.marceloscoleso.quality_evaluator_api.util.CsvExporterApi;
+import br.com.marceloscoleso.quality_evaluator_api.exception.InvalidLanguageException;
+import br.com.marceloscoleso.quality_evaluator_api.model.Language;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +33,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 
 @Service
 public class EvaluationServiceImpl implements EvaluationService {
@@ -61,6 +66,15 @@ public class EvaluationServiceImpl implements EvaluationService {
                 "language", dto.getLanguage()
         ));
 
+        if (dto.getLanguage() == null || !Arrays.asList(Language.values()).contains(dto.getLanguage())) {
+        String allowed = String.join(", ", Arrays.stream(Language.values())
+                                .map(Language::name)
+                                .toArray(String[]::new));
+        throw new InvalidLanguageException(
+        "Linguagem inválida. Linguagens aceitas: " + allowed
+        );
+        }
+        
         return Timer.builder("business.evaluations.create.time")
                 .description("Tempo para criar uma avaliação")
                 .register(meterRegistry)
@@ -94,6 +108,7 @@ public class EvaluationServiceImpl implements EvaluationService {
 
                     return toResponseDTO(saved);
                 });
+                
     }
 
     // FIND ALL

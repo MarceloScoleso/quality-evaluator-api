@@ -4,6 +4,7 @@ import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationRequestDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationResponseDTO;
 import br.com.marceloscoleso.quality_evaluator_api.service.EvaluationService;
 import br.com.marceloscoleso.quality_evaluator_api.model.Classification;
+import br.com.marceloscoleso.quality_evaluator_api.model.Language;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -174,7 +175,7 @@ public List<EvaluationResponseDTO> filter(
         @RequestParam(required = false) String projectName,
 
         @Parameter(description = "Linguagem do projeto", example = "JAVA")
-        @RequestParam(required = false) String language,
+        @RequestParam(required = false) Language language,
 
         @Parameter(description = "Score mínimo", example = "60")
         @RequestParam(required = false) Integer minScore,
@@ -198,13 +199,7 @@ public List<EvaluationResponseDTO> filter(
     filter.setClassification(classification);
     filter.setMinScore(minScore);
     filter.setMaxScore(maxScore);
-
-    if (language != null) {
-        filter.setLanguage(Enum.valueOf(
-                br.com.marceloscoleso.quality_evaluator_api.model.Language.class,
-                language
-        ));
-    }
+    filter.setLanguage(language);
 
     if (startDate != null) {
         filter.setStartDate(java.time.LocalDate.parse(startDate));
@@ -220,15 +215,81 @@ public List<EvaluationResponseDTO> filter(
     return evaluationService.filter(filter);
 }
 
-@Operation(summary = "Exporta avaliações em CSV com filtros")
+@Operation(
+        summary = "Exporta avaliações em CSV com filtros",
+        description = """
+        Permite exportar avaliações em CSV utilizando os mesmos critérios
+        disponíveis na versão console da aplicação.
+
+        Filtros disponíveis (todos opcionais):
+        - Nome do projeto (parcial)
+        - Linguagem do projeto
+        - Score mínimo e máximo
+        - Classificação
+        - Período de criação (data inicial e final)
+
+        Exemplo de uso:
+        GET /api/evaluations/export/csv?projectName=quality&language=JAVA&minScore=60&maxScore=90&classification=BOM&startDate=2024-01-01&endDate=2024-12-31
+        """
+)
+@ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "CSV gerado com sucesso",
+                content = @Content(mediaType = "text/csv")
+        ),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Filtros inválidos"
+        ),
+        @ApiResponse(
+                responseCode = "404",
+                description = "Nenhuma avaliação encontrada para exportação"
+        )
+})
 @GetMapping(value = "/export/csv", produces = "text/csv")
-public ResponseEntity<byte[]> exportCsv(EvaluationFilterDTO filter) {
+public ResponseEntity<byte[]> exportCsv(
+        @Parameter(description = "Nome do projeto (parcial)", example = "quality")
+        @RequestParam(required = false) String projectName,
+
+        @Parameter(description = "Linguagem do projeto", example = "JAVA")
+        @RequestParam(required = false) Language language,
+
+        @Parameter(description = "Score mínimo", example = "60")
+        @RequestParam(required = false) Integer minScore,
+
+        @Parameter(description = "Score máximo", example = "90")
+        @RequestParam(required = false) Integer maxScore,
+
+        @Parameter(description = "Classificação", example = "BOM")
+        @RequestParam(required = false) Classification classification,
+
+        @Parameter(description = "Data inicial (yyyy-MM-dd)", example = "2024-01-01")
+        @RequestParam(required = false) String startDate,
+
+        @Parameter(description = "Data final (yyyy-MM-dd)", example = "2024-12-31")
+        @RequestParam(required = false) String endDate
+) {
+
+    EvaluationFilterDTO filter = new EvaluationFilterDTO();
+    filter.setProjectName(projectName);
+    filter.setLanguage(language);
+    filter.setMinScore(minScore);
+    filter.setMaxScore(maxScore);
+    filter.setClassification(classification);
+
+    if (startDate != null) {
+        filter.setStartDate(java.time.LocalDate.parse(startDate));
+    }
+
+    if (endDate != null) {
+        filter.setEndDate(java.time.LocalDate.parse(endDate));
+    }
 
     byte[] csv = evaluationService.exportCsv(filter);
 
     return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=evaluations.csv")
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=evaluations.csv")
             .contentType(new MediaType("text", "csv"))
             .body(csv);
 }

@@ -17,7 +17,7 @@ public class EvaluationFilterDTO {
     @Schema(description = "Nome do projeto (busca parcial)", example = "quality")
     private String projectName;
 
-    @Schema(description = "Classificação da avaliação",example = "BOM")
+    @Schema(description = "Classificação da avaliação", example = "BOM")
     private Classification classification;
 
     @Schema(description = "Nota mínima", example = "5")

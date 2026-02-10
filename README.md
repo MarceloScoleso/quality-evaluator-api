@@ -75,18 +75,6 @@ http://localhost:8080
 http://localhost:8080/swagger-ui/index.html
 ```
 
-5. Health Check e Info:
-
-```arduino
-**Health Check:** http://localhost:8080/actuator/health
-Retorna status UP se a aplicação estiver rodando corretamente.
-```
-
-```arduino
-**Info:** http://localhost:8080/actuator/info
-Pode ser configurado para mostrar informações do projeto, versão, autor, etc.
-```
-
 ---
 
 ## 📄 Endpoints principais
@@ -181,13 +169,34 @@ GET /api/evaluations/export/csv?projectName=quality&language=JAVA&minScore=60&ma
 
 ## 📊 Health Check e Métricas
 
+### Endpoints do Spring Actuator
+
 - **Health Check:** GET /actuator/health
+  
   Retorna status de saúde da aplicação.
+  
 - **Info:** GET /actuator/info
+  
   Informações do projeto, versão, autor, etc.
+
 - **Métricas:** GET /actuator/metrics
+  
   Métricas de performance, contadores e timers (integrado com Micrometer).
 
+### Endpoints amigáveis para humanos
+
+- **Health Check:** GET /health
+  
+  Página web simples mostrando o status da aplicação,
+  
+- **Info:** GET /info
+  
+  Informações do projeto, versão, autor, etc.
+  
+- **Métricas:** GET /metrics
+  
+  Página web mostrando métricas de performance em formato legível.
+  
 ---
 
 ## 📂 Estrutura do projeto

@@ -77,11 +77,15 @@ http://localhost:8080/swagger-ui/index.html
 
 5. Health Check e Info:
 
+```arduino
 **Health Check:** http://localhost:8080/actuator/health
 Retorna status UP se a aplicação estiver rodando corretamente.
+```
 
+```arduino
 **Info:** http://localhost:8080/actuator/info
 Pode ser configurado para mostrar informações do projeto, versão, autor, etc.
+```
 
 ---
 
@@ -155,6 +159,7 @@ GET /api/evaluations/export/csv?projectName=quality&language=JAVA&minScore=60&ma
 ```
 
 **Resposta:** arquivo CSV com as avaliações filtradas.
+
 **Colunas:** Projeto,Linguagem,Nota,Classificacao,Data
 
 ---
@@ -210,6 +215,7 @@ src/
 Este projeto está sob a MIT License.
 
 **Desenvolvedor:** Marcelo Scoleso
+
 **GitHub:** https://github.com/marceloscoleso
 
 

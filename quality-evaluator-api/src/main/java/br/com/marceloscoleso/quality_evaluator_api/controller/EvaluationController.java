@@ -112,10 +112,10 @@ public class EvaluationController {
             @RequestParam(defaultValue = "createdAt,desc") String sort
     ) {
         Sort sortObj = Sort.by(
-                sort.endsWith(",asc")
-                        ? Sort.Order.asc(sort.replace(",asc", ""))
-                        : Sort.Order.desc(sort.replace(",desc", ""))
-        );
+        sort.endsWith(",asc")
+                ? Sort.Order.asc(java.util.Objects.requireNonNull(sort.replace(",asc", "")))
+                : Sort.Order.desc(java.util.Objects.requireNonNull(sort.replace(",desc", "")))
+    );
 
         Pageable pageable = PageRequest.of(page, size, sortObj);
         return evaluationService.findAll(pageable);

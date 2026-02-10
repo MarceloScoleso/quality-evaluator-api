@@ -21,7 +21,6 @@ import org.slf4j.MDC;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -47,9 +46,8 @@ public class EvaluationServiceImpl implements EvaluationService {
         this.meterRegistry = meterRegistry;
     }
 
-    /* =======================
-       CREATE
-       ======================= */
+    // CREATE
+       
 
     @Override
     @CacheEvict(value = "evaluations", allEntries = true)
@@ -98,20 +96,18 @@ public class EvaluationServiceImpl implements EvaluationService {
                 });
     }
 
-    /* =======================
-       FIND ALL
-       ======================= */
+    // FIND ALL
+       
 
     @Override
     @Cacheable("evaluations")
     public Page<EvaluationResponseDTO> findAll(Pageable pageable) {
-        return evaluationRepository.findAll(pageable)
-                .map(this::toResponseDTO);
+        return evaluationRepository.findAll(java.util.Objects.requireNonNull(pageable))
+        .map(this::toResponseDTO);
     }
 
-    /* =======================
-       FIND BY ID
-       ======================= */
+    // FIND BY ID
+     
 
     @Override
     @Cacheable(value = "evaluation", key = "#id")
@@ -119,9 +115,9 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         String requestId = MDC.get("requestId");
 
-        return evaluationRepository.findById(id)
-                .map(this::toResponseDTO)
-                .orElseThrow(() -> {
+        return evaluationRepository.findById(java.util.Objects.requireNonNull(id))
+        .map(this::toResponseDTO)
+        .orElseThrow(() -> {
                     Counter.builder("business.evaluations.not_found")
                             .register(meterRegistry)
                             .increment();
@@ -135,9 +131,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                 });
     }
 
-    /* =======================
-       FILTER (MESMOS DO CONSOLE)
-       ======================= */
+    // FILTER 
 
     @Override
     public List<EvaluationResponseDTO> filter(EvaluationFilterDTO filter) {
@@ -239,9 +233,8 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     return CsvExporterApi.export(evaluations);
 }
-    /* =======================
-       REGRAS DE NEGÓCIO
-       ======================= */
+    // REGRAS DE NEGÓCIO
+       
 
     private void validateFilter(EvaluationFilterDTO filter) {
 

@@ -17,7 +17,7 @@ public interface EvaluationService {
 
     EvaluationResponseDTO findById(Long id);
 
-    List<EvaluationResponseDTO> filter(EvaluationFilterDTO filter);
+    Page<EvaluationResponseDTO> filter(EvaluationFilterDTO filter, Pageable pageable);
     
     byte[] exportCsv(EvaluationFilterDTO filter);
 }

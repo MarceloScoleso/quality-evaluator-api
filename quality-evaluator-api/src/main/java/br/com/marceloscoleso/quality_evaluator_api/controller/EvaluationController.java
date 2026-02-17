@@ -170,7 +170,8 @@ public class EvaluationController {
         )
 })
 @GetMapping("/filter")
-public List<EvaluationResponseDTO> filter(
+public Page<EvaluationResponseDTO> filter(
+        
         @Parameter(description = "Nome do projeto (parcial)", example = "quality")
         @RequestParam(required = false) String projectName,
 
@@ -190,9 +191,21 @@ public List<EvaluationResponseDTO> filter(
         @RequestParam(required = false) String startDate,
 
         @Parameter(description = "Data final (yyyy-MM-dd)", example = "2024-12-31")
-        @RequestParam(required = false) String endDate
+        @RequestParam(required = false) String endDate,
 
+        @RequestParam(defaultValue = "0") int page,
+
+        @RequestParam(defaultValue = "6") int size,
+
+        @RequestParam(defaultValue = "createdAt,desc") String sort
 ) {
+        Sort sortObj = Sort.by(
+        sort.endsWith(",asc")
+                ? Sort.Order.asc(sort.replace(",asc", ""))
+                : Sort.Order.desc(sort.replace(",desc", ""))
+);
+
+Pageable pageable = PageRequest.of(page, size, sortObj);
 
     EvaluationFilterDTO filter = new EvaluationFilterDTO();
     filter.setProjectName(projectName);
@@ -212,7 +225,7 @@ public List<EvaluationResponseDTO> filter(
     
     
 
-    return evaluationService.filter(filter);
+    return evaluationService.filter(filter, pageable);
 }
 
 @Operation(

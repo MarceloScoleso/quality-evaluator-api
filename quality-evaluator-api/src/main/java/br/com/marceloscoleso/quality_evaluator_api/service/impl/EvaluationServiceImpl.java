@@ -25,10 +25,10 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
@@ -146,11 +146,11 @@ public class EvaluationServiceImpl implements EvaluationService {
     // FILTER 
 
     @Override
-    public List<EvaluationResponseDTO> filter(EvaluationFilterDTO filter) {
+public Page<EvaluationResponseDTO> filter(EvaluationFilterDTO filter, Pageable pageable) {
 
     validateFilter(filter);
 
-    return evaluationRepository.findAll().stream()
+    List<EvaluationResponseDTO> filtered = evaluationRepository.findAll().stream()
 
             // Data
             .filter(e -> {
@@ -163,14 +163,14 @@ public class EvaluationServiceImpl implements EvaluationService {
             // Nome do projeto
             .filter(e ->
                     filter.getProjectName() == null ||
-                    e.getProjectName().toLowerCase()
-                            .contains(filter.getProjectName().toLowerCase())
+                            e.getProjectName().toLowerCase()
+                                    .contains(filter.getProjectName().toLowerCase())
             )
 
             // Linguagem
             .filter(e ->
                     filter.getLanguage() == null ||
-                    e.getLanguage() == filter.getLanguage()
+                            e.getLanguage() == filter.getLanguage()
             )
 
             // Score
@@ -182,17 +182,36 @@ public class EvaluationServiceImpl implements EvaluationService {
 
             // Classificação
             .filter(e ->
-                filter.getClassification() == null ||
-                e.getClassification().equalsIgnoreCase(filter.getClassification().name())
+                    filter.getClassification() == null ||
+                            e.getClassification().equalsIgnoreCase(filter.getClassification().name())
             )
 
-            // Ordenação
-            .sorted(Comparator.comparing(Evaluation::getCreatedAt).reversed())
+            // Ordenação (usa o pageable agora)
+            .sorted((a, b) -> {
+                if (pageable.getSort().isSorted()) {
+                    Sort.Order order = pageable.getSort().iterator().next();
+                    int comparison = a.getCreatedAt().compareTo(b.getCreatedAt());
+                    return order.isAscending() ? comparison : -comparison;
+                }
+                return b.getCreatedAt().compareTo(a.getCreatedAt());
+            })
 
-            
             .map(this::toResponseDTO)
 
             .toList();
+
+    // Paginação manual
+    int start = (int) pageable.getOffset();
+    int end = Math.min(start + pageable.getPageSize(), filtered.size());
+
+    List<EvaluationResponseDTO> pageContent =
+            start > filtered.size() ? List.of() : filtered.subList(start, end);
+
+    return new org.springframework.data.domain.PageImpl<>(
+            pageContent,
+            pageable,
+            filtered.size()
+    );
 }
 
     @Override

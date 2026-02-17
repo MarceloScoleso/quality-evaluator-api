@@ -29,6 +29,7 @@ import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
@@ -87,7 +88,10 @@ public class EvaluationServiceImpl implements EvaluationService {
                     evaluation.setClassification(classification.name());
                     evaluation.setAnalyzedBy(dto.getAnalyzedBy());
                     evaluation.setCreatedAt(LocalDateTime.now());
-
+                    
+                    evaluation.setHasTests(dto.getHasTests());   
+                    evaluation.setUsesGit(dto.getUsesGit());
+                    
                     Counter.builder("business.evaluations.created")
                             .tag("language", dto.getLanguage().name())
                             .tag("classification", classification.name())
@@ -375,16 +379,20 @@ public Page<EvaluationResponseDTO> filter(EvaluationFilterDTO filter, Pageable p
     }
 
     private EvaluationResponseDTO toResponseDTO(Evaluation evaluation) {
-        EvaluationResponseDTO dto = new EvaluationResponseDTO();
-        dto.setId(evaluation.getId());
-        dto.setProjectName(evaluation.getProjectName());
-        dto.setLanguage(evaluation.getLanguage());
-        dto.setScore(evaluation.getScore());
-        dto.setClassification(
+    EvaluationResponseDTO dto = new EvaluationResponseDTO();
+    dto.setId(evaluation.getId());
+    dto.setProjectName(evaluation.getProjectName());
+    dto.setLanguage(evaluation.getLanguage());
+    dto.setScore(evaluation.getScore());
+    dto.setClassification(
         Classification.valueOf(evaluation.getClassification())
-        );
-        dto.setAnalyzedBy(evaluation.getAnalyzedBy());
-        dto.setCreatedAt(evaluation.getCreatedAt());
-        return dto;
-    }
+    );
+    dto.setAnalyzedBy(evaluation.getAnalyzedBy());
+    dto.setCreatedAt(evaluation.getCreatedAt());
+
+    dto.setHasTests(evaluation.isHasTests());   
+    dto.setUsesGit(evaluation.isUsesGit());    
+
+    return dto;
+}
 }

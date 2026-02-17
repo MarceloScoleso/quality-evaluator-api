@@ -18,6 +18,12 @@ public class EvaluationResponseDTO {
     @Schema(description = "Linguagem utilizada no projeto", example = "JAVA")
     private Language language;
 
+    @Schema(description = "Indica se o projeto possui testes automatizados", example = "true")
+    private boolean hasTests;
+
+    @Schema(description = "Indica se o projeto utiliza Git para versionamento", example = "true")
+    private boolean usesGit;    
+
     @Schema(description = "Pontuação obtida", example = "85")
     private Integer score;
 
@@ -86,4 +92,19 @@ public class EvaluationResponseDTO {
         this.createdAt = createdAt;
     }
 
+    public boolean isHasTests() {
+        return hasTests;
+    }
+
+    public void setHasTests(boolean hasTests) {
+        this.hasTests = hasTests;
+    }
+
+    public boolean isUsesGit() {
+        return usesGit;
+    }
+
+    public void setUsesGit(boolean usesGit) {
+        this.usesGit = usesGit;
+    }
 }

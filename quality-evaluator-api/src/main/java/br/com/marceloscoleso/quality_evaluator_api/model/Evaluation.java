@@ -24,6 +24,10 @@ public class Evaluation {
 
     private String analyzedBy;
 
+    private boolean hasTests;
+
+    private boolean usesGit;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
@@ -89,5 +93,21 @@ public class Evaluation {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    public boolean isHasTests() {
+        return hasTests;
+    }
+
+    public void setHasTests(boolean hasTests) {
+        this.hasTests = hasTests;
+    }
+
+    public boolean isUsesGit() {
+        return usesGit;
+    }
+
+    public void setUsesGit(boolean usesGit) {
+        this.usesGit = usesGit;
     }
 }

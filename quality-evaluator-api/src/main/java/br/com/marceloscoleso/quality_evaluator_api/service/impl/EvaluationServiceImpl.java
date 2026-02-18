@@ -23,6 +23,7 @@ import org.slf4j.MDC;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -54,7 +55,10 @@ public class EvaluationServiceImpl implements EvaluationService {
     // CREATE
 
     @Override
-    @CacheEvict(value = "evaluations", allEntries = true)
+@Caching(evict = {
+        @CacheEvict(value = "evaluations", allEntries = true),
+        @CacheEvict(value = "evaluationStats", allEntries = true)
+})
     public EvaluationResponseDTO create(EvaluationRequestDTO dto) {
 
         String requestId = MDC.get("requestId");
@@ -269,7 +273,7 @@ public Page<EvaluationResponseDTO> filter(EvaluationFilterDTO filter, Pageable p
 
     return CsvExporterApi.export(evaluations);
 }
-
+    @Cacheable("evaluationStats")
     @Override
 public EvaluationStatsDTO getStats() {
 

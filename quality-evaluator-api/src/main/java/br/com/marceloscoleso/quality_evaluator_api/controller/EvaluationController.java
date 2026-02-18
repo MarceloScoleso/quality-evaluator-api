@@ -2,6 +2,7 @@ package br.com.marceloscoleso.quality_evaluator_api.controller;
 
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationRequestDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationResponseDTO;
+import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationStatsDTO;
 import br.com.marceloscoleso.quality_evaluator_api.service.EvaluationService;
 import br.com.marceloscoleso.quality_evaluator_api.model.Classification;
 import br.com.marceloscoleso.quality_evaluator_api.model.Language;
@@ -229,6 +230,15 @@ Pageable pageable = PageRequest.of(page, size, sortObj);
 }
 
 @Operation(
+        summary = "Estatísticas gerais das avaliações",
+        description = "Retorna total de avaliações, média de score e quantidade de classificações EXCELENTE"
+)
+@GetMapping("/stats")
+public EvaluationStatsDTO getStats() {
+    return evaluationService.getStats();
+}
+
+@Operation(
         summary = "Exporta avaliações em CSV com filtros",
         description = """
         Permite exportar avaliações em CSV utilizando os mesmos critérios
@@ -259,7 +269,7 @@ Pageable pageable = PageRequest.of(page, size, sortObj);
                 responseCode = "404",
                 description = "Nenhuma avaliação encontrada para exportação"
         )
-})
+})      
 @GetMapping(value = "/export/csv", produces = "text/csv")
 public ResponseEntity<byte[]> exportCsv(
         @Parameter(description = "Nome do projeto (parcial)", example = "quality")

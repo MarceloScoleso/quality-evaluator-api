@@ -3,6 +3,7 @@ package br.com.marceloscoleso.quality_evaluator_api.service.impl;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationFilterDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationRequestDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationResponseDTO;
+import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationStatsDTO;
 import br.com.marceloscoleso.quality_evaluator_api.model.Classification;
 import br.com.marceloscoleso.quality_evaluator_api.exception.BusinessException;
 import br.com.marceloscoleso.quality_evaluator_api.exception.ResourceNotFoundException;
@@ -267,6 +268,29 @@ public Page<EvaluationResponseDTO> filter(EvaluationFilterDTO filter, Pageable p
     }
 
     return CsvExporterApi.export(evaluations);
+}
+
+    @Override
+public EvaluationStatsDTO getStats() {
+
+    List<Evaluation> evaluations = evaluationRepository.findAll();
+
+    long total = evaluations.size();
+
+    double average = evaluations.stream()
+            .mapToInt(Evaluation::getScore)
+            .average()
+            .orElse(0.0);
+
+    long excellentCount = evaluations.stream()
+            .filter(e -> "EXCELENTE".equalsIgnoreCase(e.getClassification()))
+            .count();
+
+    return new EvaluationStatsDTO(
+            total,
+            Math.round(average),
+            excellentCount
+    );
 }
     // REGRAS DE NEGÓCIO
        

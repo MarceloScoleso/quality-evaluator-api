@@ -31,6 +31,10 @@ public class Evaluation {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     public Evaluation() {
     }
 
@@ -42,7 +46,6 @@ public class Evaluation {
         this.createdAt = LocalDateTime.now();
     }
 
-    
     public Long getId() {
         return id;
     }
@@ -86,7 +89,7 @@ public class Evaluation {
     public void setAnalyzedBy(String analyzedBy) {
         this.analyzedBy = analyzedBy;
     }
-    
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -94,7 +97,7 @@ public class Evaluation {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
-    
+
     public boolean isHasTests() {
         return hasTests;
     }
@@ -109,5 +112,13 @@ public class Evaluation {
 
     public void setUsesGit(boolean usesGit) {
         this.usesGit = usesGit;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

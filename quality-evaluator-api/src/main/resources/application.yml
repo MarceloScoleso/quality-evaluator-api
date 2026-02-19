@@ -27,3 +27,6 @@ management:
   endpoint:
     health:
       show-details: always
+
+jwt:
+  secret: wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY1234567890abcd==

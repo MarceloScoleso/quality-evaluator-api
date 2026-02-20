@@ -371,6 +371,9 @@ private EvaluationResponseDTO toResponseDTO(Evaluation evaluation) {
     dto.setAnalyzedBy(evaluation.getAnalyzedBy());
     dto.setCreatedAt(evaluation.getCreatedAt());
 
+    dto.setHasTests(evaluation.isHasTests());
+    dto.setUsesGit(evaluation.isUsesGit());
+    
     return dto;
 }
 }

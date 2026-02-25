@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class EvaluationServiceImpl implements EvaluationService {
@@ -315,6 +316,75 @@ public class EvaluationServiceImpl implements EvaluationService {
     log.info("Avaliação {} deletada pelo usuário {}", id, user.getEmail());
     }
     
+
+    @Override
+@Cacheable(value = "dashboardSummary",
+        key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().authentication.name")
+public DashboardSummaryDTO getDashboardSummary() {
+
+    User user = getAuthenticatedUser();
+
+    List<Evaluation> evaluations =
+            evaluationRepository.findAllByUser(user);
+
+    long total = evaluations.size();
+
+    double average = evaluations.stream()
+            .mapToInt(Evaluation::getScore)
+            .average()
+            .orElse(0.0);
+
+    long excellent = evaluations.stream()
+            .filter(e -> "EXCELENTE".equalsIgnoreCase(e.getClassification()))
+            .count();
+
+    long good = evaluations.stream()
+            .filter(e -> "BOM".equalsIgnoreCase(e.getClassification()))
+            .count();
+
+    long regular = evaluations.stream()
+            .filter(e -> "REGULAR".equalsIgnoreCase(e.getClassification()))
+            .count();
+
+    long bad = evaluations.stream()
+            .filter(e -> "RUIM".equalsIgnoreCase(e.getClassification()))
+            .count();
+
+    Map<String, Long> byLanguage =
+            evaluations.stream()
+                    .collect(Collectors.groupingBy(
+                            e -> e.getLanguage().name(),
+                            Collectors.counting()
+                    ));
+
+    Map<LocalDate, Double> scoreEvolution =
+            evaluations.stream()
+                    .collect(Collectors.groupingBy(
+                            e -> e.getCreatedAt().toLocalDate(),
+                            Collectors.averagingInt(Evaluation::getScore)
+                    ));
+
+    double testsPercentage =
+            total == 0 ? 0 :
+            (evaluations.stream().filter(Evaluation::isHasTests).count() * 100.0) / total;
+
+    double gitPercentage =
+            total == 0 ? 0 :
+            (evaluations.stream().filter(Evaluation::isUsesGit).count() * 100.0) / total;
+
+    return new DashboardSummaryDTO(
+            total,
+            excellent,
+            good,
+            regular,
+            bad,
+            average,
+            byLanguage,
+            scoreEvolution,
+            testsPercentage,
+            gitPercentage
+    );
+}
     // REGRAS DE NEGÓCIO
     
 

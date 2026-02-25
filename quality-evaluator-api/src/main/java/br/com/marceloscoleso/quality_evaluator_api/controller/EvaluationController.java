@@ -25,6 +25,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+
+import br.com.marceloscoleso.quality_evaluator_api.dto.DashboardSummaryDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationFilterDTO;
 
 @Tag(
@@ -335,6 +337,15 @@ public EvaluationStatsDTO getStats() {
     return evaluationService.getStats();
 }
 
+@Operation(
+        summary = "Dashboard para as avaliações",
+        description = "Retorna informações para Dashboard"
+)
+@GetMapping("/dashboard")
+public DashboardSummaryDTO dashboard() {
+    return evaluationService.getDashboardSummary();
+
+}
 @Operation(
         summary = "Exporta avaliações em CSV com filtros",
         description = """

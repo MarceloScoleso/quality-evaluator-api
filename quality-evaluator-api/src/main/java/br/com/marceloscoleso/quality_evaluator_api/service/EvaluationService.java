@@ -1,5 +1,6 @@
 package br.com.marceloscoleso.quality_evaluator_api.service;
 
+import br.com.marceloscoleso.quality_evaluator_api.dto.DashboardSummaryDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationFilterDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationRequestDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationResponseDTO;
@@ -26,4 +27,6 @@ public interface EvaluationService {
     EvaluationResponseDTO update(Long id, EvaluationRequestDTO dto);
 
     void delete(Long id);
+
+    DashboardSummaryDTO getDashboardSummary();
 }

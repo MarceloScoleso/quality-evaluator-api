@@ -7,6 +7,8 @@ import br.com.marceloscoleso.quality_evaluator_api.repository.UserRepository;
 import br.com.marceloscoleso.quality_evaluator_api.security.JwtService;
 import br.com.marceloscoleso.quality_evaluator_api.service.UserService;
 
+import java.util.List;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -59,5 +61,28 @@ public class UserServiceImpl implements UserService {
         }
 
         return jwtService.generateToken(user.getEmail());
+    }
+
+    @Override
+    public List<UserResponseDTO> getAllUsers() {
+    return userRepository.findAll()
+            .stream()
+            .map(user -> {
+                UserResponseDTO dto = new UserResponseDTO();
+                dto.setId(user.getId());
+                dto.setName(user.getName());
+                dto.setEmail(user.getEmail());
+                dto.setCreatedAt(user.getCreatedAt());
+                return dto;
+            })
+            .toList();
+    }   
+
+    @Override
+    public void deleteUser(Long id) {
+    if (!userRepository.existsById(id)) {
+        throw new RuntimeException("Usuário não encontrado");
+    }
+    userRepository.deleteById(id);
     }
 }

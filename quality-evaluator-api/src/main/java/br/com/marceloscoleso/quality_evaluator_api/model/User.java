@@ -23,8 +23,13 @@ public class User {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;
+
     public User() {
         this.createdAt = LocalDateTime.now();
+        this.role = Role.USER;
     }
 
     public Long getId() {
@@ -67,5 +72,11 @@ public class User {
         this.createdAt = createdAt;
     }
 
-    
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 }

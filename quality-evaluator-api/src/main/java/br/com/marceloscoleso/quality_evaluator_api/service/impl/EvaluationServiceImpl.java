@@ -51,9 +51,6 @@ public class EvaluationServiceImpl implements EvaluationService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
     }
-
-    
-    // CREATE
     
 
     @Override
@@ -109,10 +106,6 @@ public class EvaluationServiceImpl implements EvaluationService {
                 });
     }
 
-    
-    // FIND ALL 
-   
-
     @Override
     @Cacheable(value = "evaluations", key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().authentication.name")
     public Page<EvaluationResponseDTO> findAll(Pageable pageable) {
@@ -120,9 +113,6 @@ public class EvaluationServiceImpl implements EvaluationService {
         return evaluationRepository.findAllByUser(user, pageable)
                 .map(this::toResponseDTO);
     }
-
-   
-    // FIND BY ID 
    
 
     @Override
@@ -136,9 +126,6 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Avaliação não encontrada"));
     }
-
-    
-    // FILTER 
     
 
     @Override
@@ -192,9 +179,6 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         return new PageImpl<>(pageContent, pageable, filtered.size());
     }
-
-    
-    // EXPORT CSV 
    
 
     @Override
@@ -213,9 +197,6 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         return CsvExporterApi.export(evaluations);
     }
-
-  
-    // STATS 
     
 
     @Override
@@ -385,9 +366,9 @@ public DashboardSummaryDTO getDashboardSummary() {
             gitPercentage
     );
 }
+
     // REGRAS DE NEGÓCIO
     
-
     private void validateFilter(EvaluationFilterDTO filter) {
 
     // Datas

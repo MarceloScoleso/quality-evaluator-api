@@ -45,10 +45,6 @@ public class EvaluationResponseDTO {
     @Schema(description = "Descrição detalhada do projeto ou análise da IA", example = "Este projeto implementa um sistema de avaliação de qualidade de software com métricas avançadas, testes automatizados e versionamento Git.")
     private String description;
 
-    // =========================
-    // GETTERS E SETTERS
-    // =========================
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

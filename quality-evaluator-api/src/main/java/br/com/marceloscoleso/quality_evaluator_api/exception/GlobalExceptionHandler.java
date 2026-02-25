@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Recurso não encontrado (404)
+    
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiError> handleNotFound(
             ResourceNotFoundException ex,
@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
-    // Bad Request genérico (400)
+   
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiError> handleBadRequest(
             BadRequestException ex,
@@ -46,7 +46,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
-    // Linguagem inválida (ENUM) — captura desserialização do Jackson dentro do HttpMessageNotReadableException
+    
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex,
@@ -72,7 +72,7 @@ public class GlobalExceptionHandler {
             }
         }
 
-        // fallback genérico
+        
         ApiError error = new ApiError(
                 HttpStatus.BAD_REQUEST.value(),
                 "Invalid request",
@@ -82,7 +82,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
-    // Erros de validação (@Valid)
+    
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(
             MethodArgumentNotValidException ex,
@@ -104,7 +104,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
-    // Regra de negócio
+    
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiError> handleBusiness(
             BusinessException ex,
@@ -119,7 +119,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
-    // Fallback (500)
+    
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(
             Exception ex,

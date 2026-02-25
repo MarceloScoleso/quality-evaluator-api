@@ -22,4 +22,8 @@ public interface EvaluationService {
     Page<EvaluationResponseDTO> filter(EvaluationFilterDTO filter, Pageable pageable);
     
     byte[] exportCsv(EvaluationFilterDTO filter);
+
+    EvaluationResponseDTO update(Long id, EvaluationRequestDTO dto);
+
+    void delete(Long id);
 }

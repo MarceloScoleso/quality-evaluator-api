@@ -145,6 +145,103 @@ public class EvaluationController {
     ) {
         return evaluationService.findById(id);
     }
+
+    @Operation(
+        summary = "Atualizar uma avaliação existente",
+        description = """
+        Atualiza os dados de uma avaliação existente.
+
+        A pontuação e a classificação são recalculadas automaticamente
+        com base nos novos dados informados.
+
+        Apenas o usuário autenticado pode atualizar sua própria avaliação.
+        """
+)
+@ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "Avaliação atualizada com sucesso",
+                content = @Content(
+                        mediaType = "application/json",
+                        schema = @Schema(implementation = EvaluationResponseDTO.class)
+                )
+        ),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Dados inválidos"
+        ),
+        @ApiResponse(
+                responseCode = "404",
+                description = "Avaliação não encontrada"
+        )
+})
+@PutMapping("/{id}")
+public EvaluationResponseDTO update(
+
+        @Parameter(
+                description = "ID da avaliação a ser atualizada",
+                example = "1"
+        )
+        @PathVariable Long id,
+
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                required = true,
+                description = "Novos dados do projeto",
+                content = @Content(
+                        schema = @Schema(implementation = EvaluationRequestDTO.class),
+                        examples = @ExampleObject(
+                                name = "Exemplo de atualização",
+                                value = """
+                                {
+                                  "projectName": "Quality Evaluator API v2",
+                                  "language": "JAVA",
+                                  "linesOfCode": 400,
+                                  "complexity": 3,
+                                  "hasTests": true,
+                                  "usesGit": true,
+                                  "analyzedBy": "Marcelo"
+                                }
+                                """
+                        )
+                )
+        )
+        @RequestBody @Valid EvaluationRequestDTO request
+) {
+        return evaluationService.update(id, request);
+}
+
+@Operation(
+        summary = "Excluir uma avaliação",
+        description = """
+        Remove permanentemente uma avaliação pelo seu ID.
+
+        Apenas o usuário autenticado pode excluir sua própria avaliação.
+
+        Após a exclusão, os dados não poderão ser recuperados.
+        """
+)
+@ApiResponses({
+        @ApiResponse(
+                responseCode = "204",
+                description = "Avaliação excluída com sucesso"
+        ),
+        @ApiResponse(
+                responseCode = "404",
+                description = "Avaliação não encontrada"
+        )
+})
+@DeleteMapping("/{id}")
+@ResponseStatus(HttpStatus.NO_CONTENT)
+public void delete(
+
+        @Parameter(
+                description = "ID da avaliação a ser excluída",
+                example = "1"
+        )
+        @PathVariable Long id
+) {
+        evaluationService.delete(id);
+}
     
     @Operation(
         summary = "Filtrar avaliações",

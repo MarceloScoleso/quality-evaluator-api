@@ -28,6 +28,13 @@ public class Evaluation {
 
     private boolean usesGit;
 
+    private Integer linesOfCode;
+
+    private Integer complexity;
+
+    @Lob
+    private String description;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
@@ -89,6 +96,30 @@ public class Evaluation {
     public void setAnalyzedBy(String analyzedBy) {
         this.analyzedBy = analyzedBy;
     }
+
+    public Integer getLinesOfCode() {
+    return linesOfCode;
+}
+
+public void setLinesOfCode(Integer linesOfCode) {
+    this.linesOfCode = linesOfCode;
+}
+
+public Integer getComplexity() {
+    return complexity;
+}
+
+public void setComplexity(Integer complexity) {
+    this.complexity = complexity;
+}
+
+public String getDescription() {
+    return description;
+}
+
+public void setDescription(String description) {
+    this.description = description;
+}
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

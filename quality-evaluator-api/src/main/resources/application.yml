@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url: jdbc:h2:file:./data/qualitydb
+    url: ${SPRING_DATASOURCE_URL}
     driver-class-name: org.h2.Driver
-    username: sa
-    password: ""
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
   jpa:
     hibernate:
@@ -17,7 +17,7 @@ spring:
       path: /h2-console
 
 server:
-  port: 8080
+  port: ${SERVER_PORT}
 
 management:
   endpoints:
@@ -29,4 +29,4 @@ management:
       show-details: always
 
 jwt:
-  secret: wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY1234567890abcd==
+  secret: ${JWT_SECRET}

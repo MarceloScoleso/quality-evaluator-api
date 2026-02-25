@@ -24,7 +24,7 @@ public class EvaluationResponseDTO {
     @Schema(description = "Indica se o projeto utiliza Git para versionamento", example = "true")
     private boolean usesGit;    
 
-    @Schema(description = "Pontuação obtida", example = "85")
+    @Schema(description = "Pontuação obtida", example = "100")
     private Integer score;
 
     @Schema(description = "Classificação final do projeto", example = "EXCELENTE")
@@ -36,75 +36,53 @@ public class EvaluationResponseDTO {
     @Schema(description = "Data e hora da criação da avaliação")
     private LocalDateTime createdAt;
 
-    public Long getId() {
-        return id;
-    }
+    @Schema(description = "Quantidade de linhas de código do projeto", example = "250")
+    private Integer linesOfCode;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    @Schema(description = "Complexidade do projeto (1 a 5)", example = "3")
+    private Integer complexity;
 
-    public String getProjectName() {
-        return projectName;
-    }
+    @Schema(description = "Descrição detalhada do projeto ou análise da IA", example = "Este projeto implementa um sistema de avaliação de qualidade de software com métricas avançadas, testes automatizados e versionamento Git.")
+    private String description;
 
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
+    // =========================
+    // GETTERS E SETTERS
+    // =========================
 
-    public Language getLanguage() {
-        return language;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setLanguage(Language language) {
-        this.language = language;
-    }
+    public String getProjectName() { return projectName; }
+    public void setProjectName(String projectName) { this.projectName = projectName; }
 
-    public Integer getScore() {
-        return score;
-    }
+    public Language getLanguage() { return language; }
+    public void setLanguage(Language language) { this.language = language; }
 
-    public void setScore(Integer score) {
-        this.score = score;
-    }
+    public boolean isHasTests() { return hasTests; }
+    public void setHasTests(boolean hasTests) { this.hasTests = hasTests; }
 
-    public Classification getClassification() {
-        return classification;
-    }
+    public boolean isUsesGit() { return usesGit; }
+    public void setUsesGit(boolean usesGit) { this.usesGit = usesGit; }
 
-    public void setClassification(Classification classification) {
-        this.classification = classification;
-    }
+    public Integer getScore() { return score; }
+    public void setScore(Integer score) { this.score = score; }
 
-    public String getAnalyzedBy() {
-        return analyzedBy;
-    }
+    public Classification getClassification() { return classification; }
+    public void setClassification(Classification classification) { this.classification = classification; }
 
-    public void setAnalyzedBy(String analyzedBy) {
-        this.analyzedBy = analyzedBy;
-    }
+    public String getAnalyzedBy() { return analyzedBy; }
+    public void setAnalyzedBy(String analyzedBy) { this.analyzedBy = analyzedBy; }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+    public Integer getLinesOfCode() { return linesOfCode; }
+    public void setLinesOfCode(Integer linesOfCode) { this.linesOfCode = linesOfCode; }
 
-    public boolean isHasTests() {
-        return hasTests;
-    }
+    public Integer getComplexity() { return complexity; }
+    public void setComplexity(Integer complexity) { this.complexity = complexity; }
 
-    public void setHasTests(boolean hasTests) {
-        this.hasTests = hasTests;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public boolean isUsesGit() {
-        return usesGit;
-    }
-
-    public void setUsesGit(boolean usesGit) {
-        this.usesGit = usesGit;
-    }
 }

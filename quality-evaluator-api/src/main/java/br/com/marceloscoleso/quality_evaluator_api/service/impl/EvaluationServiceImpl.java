@@ -4,6 +4,7 @@ import br.com.marceloscoleso.quality_evaluator_api.dto.*;
 import br.com.marceloscoleso.quality_evaluator_api.model.*;
 import br.com.marceloscoleso.quality_evaluator_api.exception.*;
 import br.com.marceloscoleso.quality_evaluator_api.repository.*;
+import br.com.marceloscoleso.quality_evaluator_api.service.DescriptionGeneratorService;
 import br.com.marceloscoleso.quality_evaluator_api.service.EvaluationService;
 import br.com.marceloscoleso.quality_evaluator_api.util.CsvExporterApi;
 
@@ -13,6 +14,7 @@ import org.springframework.cache.annotation.*;
 import org.springframework.data.domain.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
 
 import java.time.*;
 import java.util.*;
@@ -25,20 +27,19 @@ public class EvaluationServiceImpl implements EvaluationService {
     private final EvaluationRepository evaluationRepository;
     private final MeterRegistry meterRegistry;
     private final UserRepository userRepository;
+    private final DescriptionGeneratorService descriptionGeneratorService;
 
     public EvaluationServiceImpl(
             EvaluationRepository evaluationRepository,
             MeterRegistry meterRegistry,
-            UserRepository userRepository
+            UserRepository userRepository,
+            DescriptionGeneratorService descriptionGeneratorService
     ) {
         this.evaluationRepository = evaluationRepository;
         this.meterRegistry = meterRegistry;
         this.userRepository = userRepository;
+        this.descriptionGeneratorService = descriptionGeneratorService;
     }
-
-    
-    // USER AUTH
-    
 
     private User getAuthenticatedUser() {
         String email = SecurityContextHolder
@@ -82,8 +83,17 @@ public class EvaluationServiceImpl implements EvaluationService {
                     evaluation.setCreatedAt(LocalDateTime.now());
                     evaluation.setHasTests(dto.getHasTests());
                     evaluation.setUsesGit(dto.getUsesGit());
+                    evaluation.setLinesOfCode(dto.getLinesOfCode());
+                    evaluation.setComplexity(dto.getComplexity());
 
-                    // 🔥 VINCULA AO USER
+                    if (dto.getDescription() != null && !dto.getDescription().trim().isEmpty()) {
+                        evaluation.setDescription(dto.getDescription());
+                    } else {
+                        evaluation.setDescription(
+                            descriptionGeneratorService.generate(dto, score, classification)
+                        );
+                    }
+
                     User user = getAuthenticatedUser();
                     evaluation.setUser(user);
 
@@ -233,8 +243,77 @@ public class EvaluationServiceImpl implements EvaluationService {
                 Math.round(average),
                 excellentCount
         );
+    }   
+
+    @Override
+    @Caching(evict = {
+        @CacheEvict(value = "evaluations", allEntries = true),
+        @CacheEvict(value = "evaluation", key = "#id + '-' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().authentication.name"),
+        @CacheEvict(value = "evaluationStats", allEntries = true)
+    })
+    public EvaluationResponseDTO update(Long id, EvaluationRequestDTO dto) {
+
+    User user = getAuthenticatedUser();
+
+    Evaluation evaluation = evaluationRepository
+            .findByIdAndUser(id, user)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("Avaliação não encontrada"));
+
+    int score = calculateScore(dto);
+    Classification classification = classify(score);
+
+    evaluation.setProjectName(dto.getProjectName());
+    evaluation.setLanguage(dto.getLanguage());
+    evaluation.setLinesOfCode(dto.getLinesOfCode());
+    evaluation.setComplexity(dto.getComplexity());
+    evaluation.setHasTests(dto.getHasTests());
+    evaluation.setUsesGit(dto.getUsesGit());
+    evaluation.setAnalyzedBy(dto.getAnalyzedBy());
+    evaluation.setScore(score);
+    evaluation.setClassification(classification.name());
+
+    if (dto.getDescription() != null && !dto.getDescription().trim().isEmpty()) {
+        evaluation.setDescription(dto.getDescription());
+    } else {
+        evaluation.setDescription(
+                descriptionGeneratorService.generate(dto, score, classification)
+        );
     }
 
+    Evaluation updated = evaluationRepository.save(evaluation);
+
+    Counter.builder("business.evaluations.updated")
+            .tag("classification", classification.name())
+            .register(meterRegistry)
+            .increment();
+
+    return toResponseDTO(updated);
+    }
+
+    @Override
+    @Caching(evict = {
+        @CacheEvict(value = "evaluations", allEntries = true),
+        @CacheEvict(value = "evaluation", key = "#id + '-' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().authentication.name"),
+        @CacheEvict(value = "evaluationStats", allEntries = true)
+    })
+    public void delete(Long id) {
+
+    User user = getAuthenticatedUser();
+
+    Evaluation evaluation = evaluationRepository
+            .findByIdAndUser(id, user)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("Avaliação não encontrada"));
+
+    evaluationRepository.delete(evaluation);
+
+    Counter.builder("business.evaluations.deleted")
+            .register(meterRegistry)
+            .increment();
+
+    log.info("Avaliação {} deletada pelo usuário {}", id, user.getEmail());
+    }
     
     // REGRAS DE NEGÓCIO
     
@@ -374,6 +453,9 @@ private EvaluationResponseDTO toResponseDTO(Evaluation evaluation) {
     dto.setHasTests(evaluation.isHasTests());
     dto.setUsesGit(evaluation.isUsesGit());
     
+    dto.setLinesOfCode(evaluation.getLinesOfCode());
+    dto.setComplexity(evaluation.getComplexity());
+    dto.setDescription(evaluation.getDescription());
     return dto;
 }
 }

@@ -38,6 +38,8 @@ public class EvaluationRequestDTO {
     @NotBlank
     private String analyzedBy;
 
+    @Schema(description = "Descrição opcional do projeto", example = "Sistema de avaliação de software")
+    private String description;
 
     public String getProjectName() {
         return projectName;
@@ -93,5 +95,13 @@ public class EvaluationRequestDTO {
 
     public void setAnalyzedBy(String analyzedBy) {
         this.analyzedBy = analyzedBy;
+    }
+
+    public String getDescription() { 
+        return description; 
+    }
+
+    public void setDescription(String description) { 
+        this.description = description; 
     }
 }

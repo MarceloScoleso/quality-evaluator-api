@@ -24,6 +24,10 @@ O sistema permite criar avaliações de projetos, filtrar resultados, exportar d
 - Métricas e observabilidade via **Spring Boot Actuator e Micrometer**
 - Endpoints de Health e Info para monitoramento
 - Documentação automática via **OpenAPI / Swagger**
+- Autenticação com **JWT**
+- Controle de acesso baseado em **roles** 
+- Dashboard analítico com **métricas agregadas**
+- Cache com **Spring Cache**
 
 ---
 
@@ -38,7 +42,10 @@ O sistema permite criar avaliações de projetos, filtrar resultados, exportar d
 - H2 Database (em memória)
 - Logstash Logback Encoder
 - Maven
-
+- Spring Security
+- JWT Authentication
+- Spring Cache
+  
 ---
 
 ## 🚀 Rodando o projeto localmente
@@ -198,6 +205,33 @@ GET /api/evaluations/export/csv?projectName=quality&language=JAVA&minScore=60&ma
   Página web mostrando métricas de performance em formato legível.
   
 ---
+
+## 🏗 Arquitetura
+
+A aplicação segue arquitetura em camadas:
+
+- Controller → Camada de entrada HTTP
+- Service → Regras de negócio
+- Repository → Persistência com JPA
+- DTO → Transferência de dados
+- Security → Autenticação e autorização JWT
+- Monitoring → Actuator + métricas customizadas
+
+A separação de responsabilidades garante:
+- Manutenibilidade
+- Testabilidade
+- Escalabilidade
+
+  ---
+
+## 🔒 Segurança
+
+- Senhas criptografadas com BCrypt
+- Autenticação baseada em JWT
+- Controle de acesso via @PreAuthorize
+- Proteção por usuário autenticado (isolamento de dados por usuário)
+
+  ---
 
 ## 📂 Estrutura do projeto
 

@@ -20,7 +20,8 @@ public class CorsConfig {
                 registry.addMapping("/**")
                         .allowedOriginPatterns(
     frontendUrl,
-    "https://quality-api-7mty.onrender.com"
+    "https://quality-api-7mty.onrender.com",
+    "https://code-quality-evaluator-frontend.vercel.app"
 )
                         .allowedMethods("*")
                         .allowedHeaders("*");

@@ -18,7 +18,10 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins(frontendUrl)
+                        .allowedOriginPatterns(
+    frontendUrl,
+    "https://quality-api-7mty.onrender.com"
+)
                         .allowedMethods("*")
                         .allowedHeaders("*");
             }

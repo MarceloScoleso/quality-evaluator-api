@@ -1,7 +1,7 @@
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL}
-    driver-class-name: org.h2.Driver
+    driver-class-name: org.postgresql.Driver
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
 
@@ -10,11 +10,6 @@ spring:
       ddl-auto: update
     show-sql: true
     open-in-view: false
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
 
 server:
   port: ${SERVER_PORT}

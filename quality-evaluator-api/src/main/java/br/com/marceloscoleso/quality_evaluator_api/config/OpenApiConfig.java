@@ -12,30 +12,21 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @OpenAPIDefinition(
-        info = @Info(
-                title = "Quality Evaluator API",
-                version = "v1",
-                description = """
-                        API responsável por avaliar a qualidade de projetos
-                        de software com base em métricas técnicas.
-                        """,
-                contact = @Contact(
-                        name = "Marcelo Scoleso",
-                        url = "https://github.com/marceloscoleso",
-                        email = "marcelo.scolesojr@gmail.com"
-                ),
-                license = @License(
-                        name = "MIT License",
-                        url = "https://opensource.org/licenses/MIT"
-                )
+    info = @Info(
+        title = "Quality Evaluator API",
+        version = "v1",
+        description = "...",
+        contact = @Contact(
+            name = "Marcelo Scoleso",
+            url = "https://github.com/marceloscoleso",
+            email = "marcelo.scolesojr@gmail.com"
         ),
-        servers = {
-                @Server(
-                        description = "Ambiente Local",
-                        url = "http://localhost:8080"
-                )
-        },
-        security = @SecurityRequirement(name = "bearerAuth")
+        license = @License(
+            name = "MIT License",
+            url = "https://opensource.org/licenses/MIT"
+        )
+    ),
+    security = @SecurityRequirement(name = "bearerAuth")
 )
 @SecurityScheme(
         name = "bearerAuth",

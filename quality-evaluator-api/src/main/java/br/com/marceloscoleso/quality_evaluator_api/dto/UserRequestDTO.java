@@ -2,6 +2,8 @@ package br.com.marceloscoleso.quality_evaluator_api.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 public class UserRequestDTO {
 
@@ -13,7 +15,12 @@ public class UserRequestDTO {
     private String email;
 
     @NotBlank
-    private String password;
+@Size(min = 8, message = "Senha deve ter no mínimo 8 caracteres")
+@Pattern(
+    regexp = "^(?=.*[A-Z])(?=.*[0-9]).+$",
+    message = "Senha deve conter ao menos uma letra maiúscula e um número"
+)
+private String password;
 
     public String getName() {
         return name;

@@ -1,7 +1,7 @@
 package br.com.marceloscoleso.quality_evaluator_api.controller;
 
 import br.com.marceloscoleso.quality_evaluator_api.dto.UserResponseDTO;
-import br.com.marceloscoleso.quality_evaluator_api.service.UserService;
+import br.com.marceloscoleso.quality_evaluator_api.service.UserAdminService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,15 +17,15 @@ import java.util.List;
 @RequestMapping("/api/admin/users")
 public class AdminUserController {
 
-    private final UserService userService;
+    private final UserAdminService userService;
 
-    public AdminUserController(UserService userService) {
+    public AdminUserController(UserAdminService userService) {
         this.userService = userService;
     }
 
     @Operation(summary = "Listar todos os usuários")
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')") // só admins podem acessar
+    @PreAuthorize("hasRole('ADMIN')") 
     public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }

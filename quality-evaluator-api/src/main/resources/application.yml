@@ -1,6 +1,9 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
+    url: ${SPRING_DATASOURCE_URL}?sslmode=require
+    hikari:
+      data-source-properties:
+        ssl: true
     driver-class-name: org.postgresql.Driver
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}

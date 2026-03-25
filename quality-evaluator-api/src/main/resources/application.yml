@@ -13,10 +13,10 @@ spring:
       ddl-auto: update
     show-sql: true
     open-in-view: false
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
 
 server:
   port: ${PORT:8080}
+  forward-headers-strategy: framework   
 
 management:
   endpoints:
@@ -29,3 +29,7 @@ management:
 
 jwt:
   secret: ${JWT_SECRET}
+
+springdoc:
+  swagger-ui:
+    use-root-path: true   

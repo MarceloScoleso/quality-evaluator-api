@@ -486,9 +486,14 @@ private EvaluationResponseDTO toResponseDTO(Evaluation evaluation) {
     dto.setProjectName(evaluation.getProjectName());
     dto.setLanguage(evaluation.getLanguage());
     dto.setScore(evaluation.getScore());
+    try {
     dto.setClassification(
-            Classification.valueOf(evaluation.getClassification())
+        Classification.valueOf(evaluation.getClassification().trim())
     );
+} catch (Exception e) {
+    throw new RuntimeException("Valor inválido de classification no banco: [" 
+        + evaluation.getClassification() + "]");
+}
     dto.setAnalyzedBy(evaluation.getAnalyzedBy());
     dto.setCreatedAt(evaluation.getCreatedAt());
 

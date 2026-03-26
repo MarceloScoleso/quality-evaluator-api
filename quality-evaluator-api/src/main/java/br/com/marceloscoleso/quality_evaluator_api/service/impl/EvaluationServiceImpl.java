@@ -45,15 +45,36 @@ public class EvaluationServiceImpl implements EvaluationService {
     private User getAuthenticatedUser() {
     var auth = SecurityContextHolder.getContext().getAuthentication();
 
-    log.info("AUTH: {}", auth);
-    log.info("USERNAME: {}", auth != null ? auth.getName() : "null");
+    log.info("🔐 AUTH OBJECT: {}", auth);
+
+    if (auth == null) {
+        log.error("❌ Authentication está NULL");
+        throw new RuntimeException("Usuário não autenticado");
+    }
 
     String email = auth.getName();
 
-    return userRepository.findByEmail(email)
-            .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+    log.info("📧 EMAIL DO TOKEN: {}", email);
+
+    Optional<User> userOpt = userRepository.findByEmail(email);
+
+    if (userOpt.isEmpty()) {
+        log.error("❌ Usuário NÃO encontrado no banco para email: {}", email);
+
+        // DEBUG EXTRA (lista todos usuários)
+        userRepository.findAll().forEach(u ->
+            log.info("👤 USER NO BANCO: {}", u.getEmail())
+        );
+
+        throw new ResourceNotFoundException("Usuário não encontrado");
+    }
+
+    User user = userOpt.get();
+
+    log.info("✅ Usuário encontrado: ID={} EMAIL={}", user.getId(), user.getEmail());
+
+    return user;
 }
-    
 
     @Override
     @Caching(evict = {
@@ -111,10 +132,23 @@ public class EvaluationServiceImpl implements EvaluationService {
     @Override
     @Cacheable(value = "evaluations", key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().authentication.name")
     public Page<EvaluationResponseDTO> findAll(Pageable pageable) {
-        User user = getAuthenticatedUser();
-        return evaluationRepository.findAllByUser(user, pageable)
-                .map(this::toResponseDTO);
-    }
+    log.info("📥 CHAMOU findAll");
+
+    User user = getAuthenticatedUser();
+
+    log.info("🔍 Buscando avaliações para user ID={}", user.getId());
+
+    Page<Evaluation> page = evaluationRepository.findAllByUser(user, pageable);
+
+    log.info("📊 TOTAL ENCONTRADO: {}", page.getTotalElements());
+
+    return page.map(e -> {
+        log.info("➡️ Evaluation ID={} classification={}", 
+            e.getId(), e.getClassification());
+
+        return toResponseDTO(e);
+    });
+}
    
 
     @Override
@@ -482,36 +516,34 @@ private Classification classify(int score) {
 
 private EvaluationResponseDTO toResponseDTO(Evaluation evaluation) {
 
+    log.info("🔄 Convertendo Evaluation ID={}", evaluation.getId());
+
     EvaluationResponseDTO dto = new EvaluationResponseDTO();
 
     dto.setId(evaluation.getId());
-    dto.setProjectName(evaluation.getProjectName());
-    dto.setLanguage(evaluation.getLanguage());
-    dto.setScore(evaluation.getScore());
 
-    // 🔥 CORREÇÃO AQUI
     String classificationStr = evaluation.getClassification();
 
+    log.info("📌 Classification RAW: [{}]", classificationStr);
+
     if (classificationStr == null) {
+        log.warn("⚠️ Classification NULL → default REGULAR");
         dto.setClassification(Classification.REGULAR);
     } else {
         try {
-            dto.setClassification(
-                Classification.valueOf(classificationStr.trim().toUpperCase())
+            Classification c = Classification.valueOf(
+                classificationStr.trim().toUpperCase()
             );
+
+            log.info("✅ Classification convertida: {}", c);
+
+            dto.setClassification(c);
+
         } catch (Exception e) {
-            log.error("Classification inválida no banco: [{}]", classificationStr);
+            log.error("❌ Classification inválida: [{}]", classificationStr);
             dto.setClassification(Classification.REGULAR);
         }
     }
-
-    dto.setAnalyzedBy(evaluation.getAnalyzedBy());
-    dto.setCreatedAt(evaluation.getCreatedAt());
-    dto.setHasTests(evaluation.isHasTests());
-    dto.setUsesGit(evaluation.isUsesGit());
-    dto.setLinesOfCode(evaluation.getLinesOfCode());
-    dto.setComplexity(evaluation.getComplexity());
-    dto.setDescription(evaluation.getDescription());
 
     return dto;
 }

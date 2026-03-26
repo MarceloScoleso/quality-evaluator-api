@@ -488,23 +488,31 @@ private EvaluationResponseDTO toResponseDTO(Evaluation evaluation) {
     dto.setProjectName(evaluation.getProjectName());
     dto.setLanguage(evaluation.getLanguage());
     dto.setScore(evaluation.getScore());
-    try {
-    dto.setClassification(
-        Classification.valueOf(evaluation.getClassification().trim())
-    );
-} catch (Exception e) {
-    throw new RuntimeException("Valor inválido de classification no banco: [" 
-        + evaluation.getClassification() + "]");
-}
+
+    // 🔥 CORREÇÃO AQUI
+    String classificationStr = evaluation.getClassification();
+
+    if (classificationStr == null) {
+        dto.setClassification(Classification.REGULAR);
+    } else {
+        try {
+            dto.setClassification(
+                Classification.valueOf(classificationStr.trim().toUpperCase())
+            );
+        } catch (Exception e) {
+            log.error("Classification inválida no banco: [{}]", classificationStr);
+            dto.setClassification(Classification.REGULAR);
+        }
+    }
+
     dto.setAnalyzedBy(evaluation.getAnalyzedBy());
     dto.setCreatedAt(evaluation.getCreatedAt());
-
     dto.setHasTests(evaluation.isHasTests());
     dto.setUsesGit(evaluation.isUsesGit());
-    
     dto.setLinesOfCode(evaluation.getLinesOfCode());
     dto.setComplexity(evaluation.getComplexity());
     dto.setDescription(evaluation.getDescription());
+
     return dto;
 }
 }

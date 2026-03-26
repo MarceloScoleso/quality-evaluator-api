@@ -130,7 +130,6 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
-    @Cacheable(value = "evaluations", key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().authentication.name")
     public Page<EvaluationResponseDTO> findAll(Pageable pageable) {
     log.info("📥 CHAMOU findAll");
 
@@ -143,11 +142,13 @@ public class EvaluationServiceImpl implements EvaluationService {
     log.info("📊 TOTAL ENCONTRADO: {}", page.getTotalElements());
 
     return page.map(e -> {
-        log.info("➡️ Evaluation ID={} classification={}", 
-            e.getId(), e.getClassification());
-
+    try {
         return toResponseDTO(e);
-    });
+    } catch (Exception ex) {
+        log.error("💥 ERRO AO CONVERTER Evaluation ID=" + e.getId(), ex);
+        throw ex;
+    }
+});
 }
    
 

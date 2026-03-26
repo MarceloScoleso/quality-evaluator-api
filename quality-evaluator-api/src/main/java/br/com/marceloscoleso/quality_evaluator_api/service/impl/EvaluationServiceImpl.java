@@ -521,6 +521,16 @@ private EvaluationResponseDTO toResponseDTO(Evaluation evaluation) {
     EvaluationResponseDTO dto = new EvaluationResponseDTO();
 
     dto.setId(evaluation.getId());
+    dto.setProjectName(evaluation.getProjectName());
+    dto.setLanguage(evaluation.getLanguage());
+    dto.setScore(evaluation.getScore());
+    dto.setAnalyzedBy(evaluation.getAnalyzedBy());
+    dto.setCreatedAt(evaluation.getCreatedAt());
+    dto.setHasTests(evaluation.isHasTests());
+    dto.setUsesGit(evaluation.isUsesGit());
+    dto.setLinesOfCode(evaluation.getLinesOfCode());
+    dto.setComplexity(evaluation.getComplexity());
+    dto.setDescription(evaluation.getDescription());
 
     String classificationStr = evaluation.getClassification();
 
@@ -536,7 +546,6 @@ private EvaluationResponseDTO toResponseDTO(Evaluation evaluation) {
             );
 
             log.info("✅ Classification convertida: {}", c);
-
             dto.setClassification(c);
 
         } catch (Exception e) {

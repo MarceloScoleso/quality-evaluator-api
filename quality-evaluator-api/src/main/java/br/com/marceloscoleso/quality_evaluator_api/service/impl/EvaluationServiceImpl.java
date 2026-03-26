@@ -43,14 +43,16 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     private User getAuthenticatedUser() {
-        String email = SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getName();
+    var auth = SecurityContextHolder.getContext().getAuthentication();
 
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
-    }
+    log.info("AUTH: {}", auth);
+    log.info("USERNAME: {}", auth != null ? auth.getName() : "null");
+
+    String email = auth.getName();
+
+    return userRepository.findByEmail(email)
+            .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+}
     
 
     @Override

@@ -15,11 +15,12 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect  
-  
-  gemini:
-    api-key: ${GEMINI_API_KEY}
-    model: gemini-2.0-flash
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+
+gemini:
+  api-key: ${GEMINI_API_KEY}
+  model: gemini-2.0-flash
 
 server:
   port: ${PORT:8080}

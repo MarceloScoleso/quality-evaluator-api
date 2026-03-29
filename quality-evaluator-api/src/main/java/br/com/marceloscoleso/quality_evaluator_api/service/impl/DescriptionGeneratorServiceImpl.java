@@ -24,8 +24,8 @@ public class DescriptionGeneratorServiceImpl implements DescriptionGeneratorServ
     private final String model;
 
     public DescriptionGeneratorServiceImpl(
-            @Value("${spring.gemini.api-key}") String apiKey,
-            @Value("${spring.gemini.model}") String model
+            @Value("${gemini.api-key}") String apiKey,
+            @Value("${gemini.model:gemini-2.0-flash}") String model
     ) {
         this.apiKey = apiKey;
         this.model = model;
@@ -53,11 +53,16 @@ public class DescriptionGeneratorServiceImpl implements DescriptionGeneratorServ
             );
 
             Map response = webClient.post()
-                    .uri("/v1beta/models/{model}:generateContent?key={key}", model, apiKey)
-                    .bodyValue(body)
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .block();
+        .uri("/v1beta/models/{model}:generateContent?key={key}", model, apiKey)
+        .bodyValue(body)
+        .retrieve()
+        .bodyToMono(Map.class)
+        .retryWhen(
+            reactor.util.retry.Retry
+                .fixedDelay(2, java.time.Duration.ofSeconds(5))
+                .filter(ex -> ex.getMessage() != null && ex.getMessage().contains("429"))
+        )
+        .block();
 
             List<Map> candidates = (List<Map>) response.get("candidates");
             Map content = (Map) candidates.get(0).get("content");

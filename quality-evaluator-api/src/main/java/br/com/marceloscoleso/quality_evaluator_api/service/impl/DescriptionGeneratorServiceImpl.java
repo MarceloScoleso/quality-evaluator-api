@@ -7,14 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.util.retry.Retry;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -24,17 +20,16 @@ public class DescriptionGeneratorServiceImpl implements DescriptionGeneratorServ
     private static final Logger log = LoggerFactory.getLogger(DescriptionGeneratorServiceImpl.class);
 
     private final WebClient webClient;
-    private final String apiKey;
     private final String model;
 
     public DescriptionGeneratorServiceImpl(
-            @Value("${gemini.api-key}") String apiKey,
-            @Value("${gemini.model:gemini-2.0-flash}") String model
+            @Value("${groq.api-key}") String apiKey,
+            @Value("${groq.model:llama-3.3-70b-versatile}") String model
     ) {
-        this.apiKey = apiKey;
         this.model = model;
         this.webClient = WebClient.builder()
-                .baseUrl("https://generativelanguage.googleapis.com")
+                .baseUrl("https://api.groq.com/openai/v1")
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
@@ -42,60 +37,40 @@ public class DescriptionGeneratorServiceImpl implements DescriptionGeneratorServ
     @Override
     public String generate(EvaluationRequestDTO dto, int score, Classification classification) {
         try {
-            String prompt = buildPrompt(dto, score, classification);
-
             Map<String, Object> body = Map.of(
-                    "contents", List.of(
-                            Map.of("parts", List.of(
-                                    Map.of("text", prompt)
-                            ))
-                    ),
-                    "generationConfig", Map.of(
-                            "maxOutputTokens", 300,
-                            "temperature", 0.7
+                    "model", model,
+                    "max_tokens", 300,
+                    "messages", List.of(
+                            Map.of("role", "system", "content",
+                                    "Você é um especialista em qualidade de software. " +
+                                    "Gere descrições técnicas objetivas e profissionais em português, " +
+                                    "com no máximo 3 frases. Seja direto e evite introduções genéricas."),
+                            Map.of("role", "user", "content", buildPrompt(dto, score, classification))
                     )
             );
 
             Map response = webClient.post()
-                    .uri("/v1beta/models/{model}:generateContent?key={key}", model, apiKey)
+                    .uri("/chat/completions")
                     .bodyValue(body)
                     .retrieve()
-                    .onStatus(
-                        HttpStatusCode::is4xxClientError,
-                        clientResponse -> clientResponse.bodyToMono(String.class)
-                                .map(body2 -> new WebClientResponseException(
-                                        clientResponse.statusCode().value(),
-                                        "Gemini error: " + body2,
-                                        null, null, null
-                                ))
-                    )
                     .bodyToMono(Map.class)
-                    .retryWhen(
-                        Retry.fixedDelay(3, Duration.ofSeconds(10))
-                             .filter(ex -> ex instanceof WebClientResponseException wcre
-                                     && wcre.getStatusCode().value() == 429)
-                             .doBeforeRetry(signal ->
-                                     log.warn("⏳ Rate limit Gemini, tentativa {}...", signal.totalRetries() + 1))
-                    )
                     .block();
 
-            List<Map> candidates = (List<Map>) response.get("candidates");
-            Map content = (Map) candidates.get(0).get("content");
-            List<Map> parts = (List<Map>) content.get("parts");
-            String text = (String) parts.get(0).get("text");
+            List<Map> choices = (List<Map>) response.get("choices");
+            Map message = (Map) choices.get(0).get("message");
+            String text = (String) message.get("content");
 
-            log.info("✅ Descrição gerada pelo Gemini para projeto: {}", dto.getProjectName());
+            log.info("✅ Descrição gerada pelo Groq para projeto: {}", dto.getProjectName());
             return text.trim();
 
         } catch (Exception e) {
-            log.error("❌ Falha ao chamar Gemini, usando fallback. Erro: {}", e.getMessage());
+            log.error("❌ Falha ao chamar Groq, usando fallback. Erro: {}", e.getMessage());
             return generateFallback(dto, score, classification);
         }
     }
 
     private String buildPrompt(EvaluationRequestDTO dto, int score, Classification classification) {
         return """
-                Você é um especialista em qualidade de software.
                 Avalie o projeto com as seguintes características:
                 - Nome: %s
                 - Linguagem: %s

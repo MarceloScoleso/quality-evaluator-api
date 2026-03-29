@@ -13,10 +13,11 @@ spring:
       ddl-auto: create
     show-sql: true
     open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect  
 
 server:
   port: ${PORT:8080}
-  forward-headers-strategy: framework   
+  forward-headers-strategy: framework
 
 management:
   endpoints:
@@ -32,4 +33,4 @@ jwt:
 
 springdoc:
   swagger-ui:
-    use-root-path: true   
+    use-root-path: true

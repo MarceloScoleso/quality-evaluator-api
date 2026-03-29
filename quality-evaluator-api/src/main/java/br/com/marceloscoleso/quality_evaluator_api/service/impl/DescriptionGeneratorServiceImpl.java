@@ -7,10 +7,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.util.retry.Retry;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -53,16 +57,27 @@ public class DescriptionGeneratorServiceImpl implements DescriptionGeneratorServ
             );
 
             Map response = webClient.post()
-        .uri("/v1beta/models/{model}:generateContent?key={key}", model, apiKey)
-        .bodyValue(body)
-        .retrieve()
-        .bodyToMono(Map.class)
-        .retryWhen(
-            reactor.util.retry.Retry
-                .fixedDelay(2, java.time.Duration.ofSeconds(5))
-                .filter(ex -> ex.getMessage() != null && ex.getMessage().contains("429"))
-        )
-        .block();
+                    .uri("/v1beta/models/{model}:generateContent?key={key}", model, apiKey)
+                    .bodyValue(body)
+                    .retrieve()
+                    .onStatus(
+                        HttpStatusCode::is4xxClientError,
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .map(body2 -> new WebClientResponseException(
+                                        clientResponse.statusCode().value(),
+                                        "Gemini error: " + body2,
+                                        null, null, null
+                                ))
+                    )
+                    .bodyToMono(Map.class)
+                    .retryWhen(
+                        Retry.fixedDelay(3, Duration.ofSeconds(10))
+                             .filter(ex -> ex instanceof WebClientResponseException wcre
+                                     && wcre.getStatusCode().value() == 429)
+                             .doBeforeRetry(signal ->
+                                     log.warn("⏳ Rate limit Gemini, tentativa {}...", signal.totalRetries() + 1))
+                    )
+                    .block();
 
             List<Map> candidates = (List<Map>) response.get("candidates");
             Map content = (Map) candidates.get(0).get("content");

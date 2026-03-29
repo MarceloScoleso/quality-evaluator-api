@@ -99,7 +99,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                     evaluation.setProjectName(dto.getProjectName());
                     evaluation.setLanguage(dto.getLanguage());
                     evaluation.setScore(score);
-                    evaluation.setClassification(classification.name());
+                    evaluation.setClassification(classification);
                     evaluation.setAnalyzedBy(dto.getAnalyzedBy());
                     evaluation.setCreatedAt(LocalDateTime.now());
                     evaluation.setHasTests(dto.getHasTests());
@@ -200,7 +200,7 @@ public class EvaluationServiceImpl implements EvaluationService {
 
                 .filter(e ->
                         filter.getClassification() == null ||
-                                e.getClassification().equalsIgnoreCase(filter.getClassification().name())
+                                e.getClassification() == filter.getClassification()
                 )
 
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
@@ -254,7 +254,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .orElse(0.0);
 
         long excellentCount = evaluations.stream()
-                .filter(e -> "EXCELENTE".equalsIgnoreCase(e.getClassification()))
+                .filter(e -> e.getClassification() == Classification.EXCELENTE)
                 .count();
 
         return new EvaluationStatsDTO(
@@ -291,7 +291,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     evaluation.setUsesGit(dto.getUsesGit());
     evaluation.setAnalyzedBy(dto.getAnalyzedBy());
     evaluation.setScore(score);
-    evaluation.setClassification(classification.name());
+    evaluation.setClassification(classification);
 
     if (dto.getDescription() != null && !dto.getDescription().trim().isEmpty()) {
         evaluation.setDescription(dto.getDescription());
@@ -353,19 +353,19 @@ public DashboardSummaryDTO getDashboardSummary() {
             .orElse(0.0);
 
     long excellent = evaluations.stream()
-            .filter(e -> "EXCELENTE".equalsIgnoreCase(e.getClassification()))
+            .filter(e -> e.getClassification() == Classification.EXCELENTE)
             .count();
 
     long good = evaluations.stream()
-            .filter(e -> "BOM".equalsIgnoreCase(e.getClassification()))
+            .filter(e -> e.getClassification() == Classification.BOM)
             .count();
 
     long regular = evaluations.stream()
-            .filter(e -> "REGULAR".equalsIgnoreCase(e.getClassification()))
+            .filter(e -> e.getClassification() == Classification.REGULAR)
             .count();
 
     long bad = evaluations.stream()
-            .filter(e -> "RUIM".equalsIgnoreCase(e.getClassification()))
+            .filter(e -> e.getClassification() == Classification.RUIM)
             .count();
 
     Map<String, Long> byLanguage =
@@ -533,27 +533,14 @@ private EvaluationResponseDTO toResponseDTO(Evaluation evaluation) {
     dto.setComplexity(evaluation.getComplexity());
     dto.setDescription(evaluation.getDescription());
 
-    String classificationStr = evaluation.getClassification();
+    Classification classification = evaluation.getClassification();
 
-    log.info("📌 Classification RAW: [{}]", classificationStr);
-
-    if (classificationStr == null) {
-        log.warn("⚠️ Classification NULL → default REGULAR");
-        dto.setClassification(Classification.REGULAR);
-    } else {
-        try {
-            Classification c = Classification.valueOf(
-                classificationStr.trim().toUpperCase()
-            );
-
-            log.info("✅ Classification convertida: {}", c);
-            dto.setClassification(c);
-
-        } catch (Exception e) {
-            log.error("❌ Classification inválida: [{}]", classificationStr);
-            dto.setClassification(Classification.REGULAR);
-        }
-    }
+if (classification == null) {
+    log.warn("⚠️ Classification NULL → default REGULAR");
+    dto.setClassification(Classification.REGULAR);
+} else {
+    dto.setClassification(classification);
+}
 
     return dto;
 }

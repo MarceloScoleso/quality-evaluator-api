@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,9 +15,15 @@ public interface EvaluationRepository
         extends JpaRepository<Evaluation, Long>,
                 JpaSpecificationExecutor<Evaluation> {
 
-    Page<Evaluation> findAllByUserId(Long userId, Pageable pageable);
+    @Query(
+    value = "SELECT e FROM Evaluation e JOIN FETCH e.user WHERE e.user.id = :userId",
+    countQuery = "SELECT COUNT(e) FROM Evaluation e WHERE e.user.id = :userId"
+)
+Page<Evaluation> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
 
-    List<Evaluation> findAllByUserId(Long userId);
+    @Query("SELECT e FROM Evaluation e JOIN FETCH e.user WHERE e.user.id = :userId")
+List<Evaluation> findAllByUserId(@Param("userId") Long userId);
 
-    Optional<Evaluation> findByIdAndUserId(Long id, Long userId);
+        @Query("SELECT e FROM Evaluation e JOIN FETCH e.user WHERE e.id = :id AND e.user.id = :userId")
+        Optional<Evaluation> findByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
 }

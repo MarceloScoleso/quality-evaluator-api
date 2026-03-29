@@ -20,7 +20,9 @@ public class Evaluation {
 
     private int score;
 
-    private String classification;
+    
+    @Enumerated(EnumType.STRING)
+    private Classification classification;
 
     private String analyzedBy;
 
@@ -42,10 +44,9 @@ public class Evaluation {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    public Evaluation() {
-    }
+    public Evaluation() {}
 
-    public Evaluation(String projectName, Language language, int score, String classification) {
+    public Evaluation(String projectName, Language language, int score, Classification classification) {
         this.projectName = projectName;
         this.language = language;
         this.score = score;
@@ -81,11 +82,12 @@ public class Evaluation {
         this.score = score;
     }
 
-    public String getClassification() {
+    // 🔥 ALTERAÇÃO AQUI
+    public Classification getClassification() {
         return classification;
     }
 
-    public void setClassification(String classification) {
+    public void setClassification(Classification classification) {
         this.classification = classification;
     }
 
@@ -98,28 +100,28 @@ public class Evaluation {
     }
 
     public Integer getLinesOfCode() {
-    return linesOfCode;
-}
+        return linesOfCode;
+    }
 
-public void setLinesOfCode(Integer linesOfCode) {
-    this.linesOfCode = linesOfCode;
-}
+    public void setLinesOfCode(Integer linesOfCode) {
+        this.linesOfCode = linesOfCode;
+    }
 
-public Integer getComplexity() {
-    return complexity;
-}
+    public Integer getComplexity() {
+        return complexity;
+    }
 
-public void setComplexity(Integer complexity) {
-    this.complexity = complexity;
-}
+    public void setComplexity(Integer complexity) {
+        this.complexity = complexity;
+    }
 
-public String getDescription() {
-    return description;
-}
+    public String getDescription() {
+        return description;
+    }
 
-public void setDescription(String description) {
-    this.description = description;
-}
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

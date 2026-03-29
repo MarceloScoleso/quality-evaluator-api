@@ -20,16 +20,17 @@ public class DescriptionGeneratorServiceImpl implements DescriptionGeneratorServ
     private static final Logger log = LoggerFactory.getLogger(DescriptionGeneratorServiceImpl.class);
 
     private final WebClient webClient;
+    private final String apiKey;
     private final String model;
 
     public DescriptionGeneratorServiceImpl(
-            @Value("${openai.api-key}") String apiKey,
-            @Value("${openai.model:gpt-4o-mini}") String model
+            @Value("${gemini.api-key}") String apiKey,
+            @Value("${gemini.model:gemini-2.0-flash}") String model
     ) {
+        this.apiKey = apiKey;
         this.model = model;
         this.webClient = WebClient.builder()
-                .baseUrl("https://api.openai.com/v1")
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                .baseUrl("https://generativelanguage.googleapis.com")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
@@ -40,39 +41,41 @@ public class DescriptionGeneratorServiceImpl implements DescriptionGeneratorServ
             String prompt = buildPrompt(dto, score, classification);
 
             Map<String, Object> body = Map.of(
-                    "model", model,
-                    "max_tokens", 300,
-                    "messages", List.of(
-                            Map.of("role", "system", "content",
-                                    "Você é um especialista em qualidade de software. " +
-                                    "Gere descrições técnicas objetivas e profissionais em português, " +
-                                    "com no máximo 3 frases. Seja direto e evite introduções genéricas."),
-                            Map.of("role", "user", "content", prompt)
+                    "contents", List.of(
+                            Map.of("parts", List.of(
+                                    Map.of("text", prompt)
+                            ))
+                    ),
+                    "generationConfig", Map.of(
+                            "maxOutputTokens", 300,
+                            "temperature", 0.7
                     )
             );
 
             Map response = webClient.post()
-                    .uri("/chat/completions")
+                    .uri("/v1beta/models/{model}:generateContent?key={key}", model, apiKey)
                     .bodyValue(body)
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
 
-            List<Map> choices = (List<Map>) response.get("choices");
-            Map message = (Map) choices.get(0).get("message");
-            String content = (String) message.get("content");
+            List<Map> candidates = (List<Map>) response.get("candidates");
+            Map content = (Map) candidates.get(0).get("content");
+            List<Map> parts = (List<Map>) content.get("parts");
+            String text = (String) parts.get(0).get("text");
 
-            log.info("✅ Descrição gerada pela OpenAI para projeto: {}", dto.getProjectName());
-            return content.trim();
+            log.info("✅ Descrição gerada pelo Gemini para projeto: {}", dto.getProjectName());
+            return text.trim();
 
         } catch (Exception e) {
-            log.error("❌ Falha ao chamar OpenAI, usando fallback. Erro: {}", e.getMessage());
+            log.error("❌ Falha ao chamar Gemini, usando fallback. Erro: {}", e.getMessage());
             return generateFallback(dto, score, classification);
         }
     }
 
     private String buildPrompt(EvaluationRequestDTO dto, int score, Classification classification) {
         return """
+                Você é um especialista em qualidade de software.
                 Avalie o projeto com as seguintes características:
                 - Nome: %s
                 - Linguagem: %s
@@ -82,16 +85,17 @@ public class DescriptionGeneratorServiceImpl implements DescriptionGeneratorServ
                 - Utiliza Git: %s
                 - Score final: %d/100
                 - Classificação: %s
-                
-                Gere uma descrição técnica profissional em português destacando os pontos fortes, \
-                fracos e uma recomendação principal para melhoria. Máximo 3 frases.
+
+                Gere uma descrição técnica profissional em português destacando os pontos \
+                fortes, fracos e uma recomendação principal de melhoria. \
+                Máximo 3 frases. Seja direto e objetivo, sem introduções genéricas.
                 """.formatted(
                 dto.getProjectName(),
                 dto.getLanguage().name(),
                 dto.getLinesOfCode(),
                 dto.getComplexity(),
-                dto.getHasTests() ? "Sim" : "Não",
-                dto.getUsesGit() ? "Sim" : "Não",
+                Boolean.TRUE.equals(dto.getHasTests()) ? "Sim" : "Não",
+                Boolean.TRUE.equals(dto.getUsesGit()) ? "Sim" : "Não",
                 score,
                 classification.name()
         );

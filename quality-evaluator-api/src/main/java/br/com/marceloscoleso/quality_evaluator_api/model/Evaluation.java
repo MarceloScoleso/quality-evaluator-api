@@ -34,8 +34,8 @@ public class Evaluation {
 
     private Integer complexity;
 
-    @Lob
-    private String description;
+    @Column(columnDefinition = "TEXT")
+private String description;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;

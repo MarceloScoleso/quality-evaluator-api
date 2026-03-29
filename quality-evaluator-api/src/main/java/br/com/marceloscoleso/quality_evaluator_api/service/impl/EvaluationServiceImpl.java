@@ -429,91 +429,51 @@ private void validateFilter(EvaluationFilterDTO filter) {
 
 private int calculateScore(EvaluationRequestDTO dto) {
 
-    int score = 0;
+    // PILAR 1 — Boas práticas (40 pts)
+    int boasPraticas = 0;
+    if (Boolean.TRUE.equals(dto.getHasTests())) boasPraticas += 25;
+    else boasPraticas -= 5;
+    if (Boolean.TRUE.equals(dto.getUsesGit())) boasPraticas += 15;
+    else boasPraticas -= 5;
 
-  
-    switch (dto.getLanguage()) {
-        case JAVA, CSHARP, RUST -> score += 18;
-        case CPP, GO, KOTLIN -> score += 16;
-        case PYTHON, TYPESCRIPT, SWIFT -> score += 14;
-        case JAVASCRIPT -> score += 12;
-        case C -> score += 13;
-        case PHP, RUBY, DART -> score += 10;
-        case OTHER -> score += 8;
-    }
+    // PILAR 2 — Complexidade (30 pts)
+    int complexidade = switch (dto.getComplexity()) {
+        case 1 -> 30;
+        case 2 -> 25;
+        case 3 -> 15;
+        case 4 -> 5;
+        case 5 -> 0;
+        default -> 10;
+    };
 
-   
+    // PILAR 3 — Tamanho adequado (20 pts)
     int lines = dto.getLinesOfCode();
+    int tamanho;
+    if      (lines <= 50)   tamanho = 8;
+    else if (lines <= 300)  tamanho = 20;
+    else if (lines <= 1000) tamanho = 16;
+    else if (lines <= 5000) tamanho = 10;
+    else                    tamanho = 5;
 
-    if (lines <= 100) score += 5;
-    else if (lines <= 500) score += 18;
-    else if (lines <= 1000) score += 15;
-    else if (lines <= 5000) score += 10;
-    else score += 5;
+    // PILAR 4 — Linguagem (10 pts)
+    int linguagem = switch (dto.getLanguage()) {
+        case JAVA, KOTLIN, CSHARP, TYPESCRIPT, RUST, GO -> 10;
+        case PYTHON, SWIFT, CPP -> 8;
+        case JAVASCRIPT, RUBY, DART -> 6;
+        case PHP, C -> 5;
+        case OTHER -> 4;
+    };
 
-  
-    switch (dto.getComplexity()) {
-        case 1 -> score += 20;
-        case 2 -> score += 15;
-        case 3 -> score += 8;
-        case 4 -> score -= 10;
-        case 5 -> score -= 20;
-    }
-
-  
-    if (Boolean.TRUE.equals(dto.getHasTests()))
-        score += 20;
-    else
-        score -= 10;
-
-   
-    if (Boolean.TRUE.equals(dto.getUsesGit()))
-        score += 8;
-    else
-        score -= 5;
-
-    
-    score += simulateCodeQuality(dto.getProjectName(), dto.getLanguage());
-
-    
-    if (score > 100) return 100;
-    if (score < 0) return 0;
-
-    return score;
-}
-
-private int simulateCodeQuality(String projectName, Language language) {
-
-    int qualityScore = 0;
-
-    int nameLength = projectName.length();
-
-    if (nameLength <= 10) qualityScore += 3;
-    else if (nameLength <= 20) qualityScore += 6;
-    else qualityScore += 8;
-
-    switch (language) {
-        case JAVA, CSHARP, RUST -> qualityScore += 6;
-        case CPP, GO -> qualityScore += 5;
-        case PYTHON, TYPESCRIPT, KOTLIN, SWIFT -> qualityScore += 4;
-        default -> qualityScore += 3;
-    }
-
-    int variation = Math.abs(projectName.hashCode() % 5);
-    qualityScore += variation;
-
-    return qualityScore;
+    int total = boasPraticas + complexidade + tamanho + linguagem;
+    return Math.max(0, Math.min(100, total));
 }
 
 private Classification classify(int score) {
-
-    if (score >= 85) return Classification.EXCELENTE;
-    if (score >= 70) return Classification.BOM;
-    if (score >= 50) return Classification.REGULAR;
-
+    if (score >= 80) return Classification.EXCELENTE;
+    if (score >= 60) return Classification.BOM;
+    if (score >= 40) return Classification.REGULAR;
     return Classification.RUIM;
 }
-
 
 private EvaluationResponseDTO toResponseDTO(Evaluation evaluation) {
 

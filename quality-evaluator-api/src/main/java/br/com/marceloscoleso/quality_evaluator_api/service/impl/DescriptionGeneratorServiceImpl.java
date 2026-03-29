@@ -3,146 +3,113 @@ package br.com.marceloscoleso.quality_evaluator_api.service.impl;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationRequestDTO;
 import br.com.marceloscoleso.quality_evaluator_api.model.Classification;
 import br.com.marceloscoleso.quality_evaluator_api.service.DescriptionGeneratorService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
-import java.util.Random;
+import java.util.Map;
 
 @Service
 public class DescriptionGeneratorServiceImpl implements DescriptionGeneratorService {
 
-    private final Random random = new Random();
+    private static final Logger log = LoggerFactory.getLogger(DescriptionGeneratorServiceImpl.class);
 
-    private String pick(List<String> options) {
-        return options.get(random.nextInt(options.size()));
+    private final WebClient webClient;
+    private final String model;
+
+    public DescriptionGeneratorServiceImpl(
+            @Value("${openai.api-key}") String apiKey,
+            @Value("${openai.model:gpt-4o-mini}") String model
+    ) {
+        this.model = model;
+        this.webClient = WebClient.builder()
+                .baseUrl("https://api.openai.com/v1")
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
     }
 
     @Override
     public String generate(EvaluationRequestDTO dto, int score, Classification classification) {
+        try {
+            String prompt = buildPrompt(dto, score, classification);
 
-        StringBuilder description = new StringBuilder();
+            Map<String, Object> body = Map.of(
+                    "model", model,
+                    "max_tokens", 300,
+                    "messages", List.of(
+                            Map.of("role", "system", "content",
+                                    "Você é um especialista em qualidade de software. " +
+                                    "Gere descrições técnicas objetivas e profissionais em português, " +
+                                    "com no máximo 3 frases. Seja direto e evite introduções genéricas."),
+                            Map.of("role", "user", "content", prompt)
+                    )
+            );
 
-        description.append(buildIntro(dto));
-        description.append(buildTechnicalContext(dto));
-        description.append(buildQualityAnalysis(dto, classification));
-        description.append(buildFinalVerdict(score, classification));
+            Map response = webClient.post()
+                    .uri("/chat/completions")
+                    .bodyValue(body)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
 
-        return description.toString().trim();
+            List<Map> choices = (List<Map>) response.get("choices");
+            Map message = (Map) choices.get(0).get("message");
+            String content = (String) message.get("content");
+
+            log.info("✅ Descrição gerada pela OpenAI para projeto: {}", dto.getProjectName());
+            return content.trim();
+
+        } catch (Exception e) {
+            log.error("❌ Falha ao chamar OpenAI, usando fallback. Erro: {}", e.getMessage());
+            return generateFallback(dto, score, classification);
+        }
     }
 
-    
-    private String buildIntro(EvaluationRequestDTO dto) {
-
-        List<String> intros = List.of(
-                "O projeto \"%s\" desenvolvido em %s demonstra características técnicas interessantes. ",
-                "A aplicação \"%s\", construída com %s, apresenta uma proposta estrutural relevante. ",
-                "O sistema \"%s\" implementado utilizando %s revela decisões arquiteturais específicas. ",
-                "Analisando o projeto \"%s\" em %s, observam-se aspectos técnicos distintos. "
-        );
-
-        return pick(intros).formatted(
+    private String buildPrompt(EvaluationRequestDTO dto, int score, Classification classification) {
+        return """
+                Avalie o projeto com as seguintes características:
+                - Nome: %s
+                - Linguagem: %s
+                - Linhas de código: %d
+                - Complexidade: %d/5
+                - Possui testes automatizados: %s
+                - Utiliza Git: %s
+                - Score final: %d/100
+                - Classificação: %s
+                
+                Gere uma descrição técnica profissional em português destacando os pontos fortes, \
+                fracos e uma recomendação principal para melhoria. Máximo 3 frases.
+                """.formatted(
                 dto.getProjectName(),
-                dto.getLanguage()
+                dto.getLanguage().name(),
+                dto.getLinesOfCode(),
+                dto.getComplexity(),
+                dto.getHasTests() ? "Sim" : "Não",
+                dto.getUsesGit() ? "Sim" : "Não",
+                score,
+                classification.name()
         );
     }
 
-    
-    private String buildTechnicalContext(EvaluationRequestDTO dto) {
-
-        StringBuilder context = new StringBuilder();
-
-        context.append(
-                pick(List.of(
-                        "Com %d linhas de código e complexidade %d, ",
-                        "Totalizando %d linhas e nível de complexidade %d, ",
-                        "Estruturado em %d linhas com complexidade %d, "
-                )).formatted(dto.getLinesOfCode(), dto.getComplexity())
-        );
-
-        if (Boolean.TRUE.equals(dto.getHasTests())) {
-            context.append(
-                    pick(List.of(
-                            "conta com cobertura de testes automatizados, ",
-                            "inclui validação por meio de testes, ",
-                            "possui suporte a testes automatizados, "
-                    ))
-            );
-        } else {
-            context.append(
-                    pick(List.of(
-                            "não apresenta evidências de testes automatizados, ",
-                            "carece de cobertura de testes, ",
-                            "não demonstra validação automatizada, "
-                    ))
-            );
-        }
-
-        if (Boolean.TRUE.equals(dto.getUsesGit())) {
-            context.append(
-                    pick(List.of(
-                            "além de utilizar controle de versão com Git. ",
-                            "mantendo versionamento estruturado com Git. ",
-                            "fazendo uso adequado de controle de versão. "
-                    ))
-            );
-        } else {
-            context.append(
-                    pick(List.of(
-                            "e não evidencia práticas formais de versionamento. ",
-                            "sem indicar uso estruturado de versionamento. ",
-                            "o que pode impactar rastreabilidade e colaboração. "
-                    ))
-            );
-        }
-
-        return context.toString();
-    }
-
-    
-    private String buildQualityAnalysis(EvaluationRequestDTO dto, Classification classification) {
-
-        return switch (classification) {
-
-            case EXCELENTE -> pick(List.of(
-                    "O conjunto de decisões técnicas indica alta maturidade arquitetural e alinhamento com boas práticas modernas. ",
-                    "A estrutura demonstra solidez, coesão e preocupação clara com qualidade e manutenção futura. ",
-                    "A implementação revela excelência técnica e forte aderência a princípios de engenharia de software. "
-            ));
-
-            case BOM -> pick(List.of(
-                    "A solução apresenta consistência estrutural e bom domínio técnico. ",
-                    "Observa-se uma base sólida, ainda que existam oportunidades pontuais de refinamento. ",
-                    "O projeto demonstra organização e qualidade satisfatória na maior parte dos aspectos avaliados. "
-            ));
-
-            case REGULAR -> pick(List.of(
-                    "Embora funcional, a implementação poderia evoluir em termos de organização e robustez. ",
-                    "Existem pontos estruturais que merecem revisão para elevar o padrão técnico. ",
-                    "A base é aceitável, porém há espaço considerável para melhorias arquiteturais. "
-            ));
-
-            case RUIM -> pick(List.of(
-                    "A estrutura atual evidencia fragilidades que comprometem a qualidade geral da solução. ",
-                    "São perceptíveis lacunas importantes em organização, padronização e boas práticas. ",
-                    "O projeto necessita de revisões estruturais significativas para atingir um nível técnico adequado. "
-            ));
-        };
-    }
-
-    
-    private String buildFinalVerdict(int score, Classification classification) {
-
-        String intensity = switch (classification) {
-            case EXCELENTE -> "desempenho excepcional";
-            case BOM -> "bom desempenho técnico";
-            case REGULAR -> "desempenho mediano";
-            case RUIM -> "baixo desempenho técnico";
+    private String generateFallback(EvaluationRequestDTO dto, int score, Classification classification) {
+        String qualidade = switch (classification) {
+            case EXCELENTE -> "excelente qualidade técnica";
+            case BOM -> "boa qualidade técnica";
+            case REGULAR -> "qualidade técnica regular";
+            case RUIM -> "baixa qualidade técnica";
         };
 
-        return pick(List.of(
-                "A pontuação final foi %d/100, refletindo um %s.",
-                "Com score %d/100, o projeto demonstra %s.",
-                "A avaliação consolidada atingiu %d/100, caracterizando um %s."
-        )).formatted(score, intensity);
+        String testes = Boolean.TRUE.equals(dto.getHasTests())
+                ? "A presença de testes automatizados é um ponto positivo relevante."
+                : "A ausência de testes automatizados é o principal ponto de melhoria.";
+
+        return "O projeto %s em %s obteve score %d/100, demonstrando %s. %s"
+                .formatted(dto.getProjectName(), dto.getLanguage().name(), score, qualidade, testes);
     }
 }

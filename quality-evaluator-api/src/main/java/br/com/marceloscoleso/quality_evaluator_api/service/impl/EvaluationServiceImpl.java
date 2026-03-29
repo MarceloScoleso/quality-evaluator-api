@@ -137,7 +137,7 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     log.info("🔍 Buscando avaliações para user ID={}", user.getId());
 
-    Page<Evaluation> page = evaluationRepository.findAllByUser(user, pageable);
+    Page<Evaluation> page = evaluationRepository.findAllByUserId(user.getId(), pageable);
 
     log.info("📊 TOTAL ENCONTRADO: {}", page.getTotalElements());
 
@@ -158,7 +158,7 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         User user = getAuthenticatedUser();
 
-        return evaluationRepository.findByIdAndUser(id, user)
+        return evaluationRepository.findByIdAndUserId(id, user.getId())
                 .map(this::toResponseDTO)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Avaliação não encontrada"));
@@ -172,7 +172,7 @@ public class EvaluationServiceImpl implements EvaluationService {
 
         User user = getAuthenticatedUser();
 
-        List<EvaluationResponseDTO> filtered = evaluationRepository.findAllByUser(user).stream()
+        List<EvaluationResponseDTO> filtered = evaluationRepository.findAllByUserId(user.getId()).stream()
 
                 .filter(e -> {
                     LocalDate date = e.getCreatedAt().toLocalDate();
@@ -226,7 +226,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         User user = getAuthenticatedUser();
 
         List<Evaluation> evaluations =
-                evaluationRepository.findAllByUser(user);
+                evaluationRepository.findAllByUserId(user.getId());
 
         if (evaluations.isEmpty()) {
             throw new BusinessException("Nenhuma avaliação encontrada para exportação");
@@ -244,7 +244,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         User user = getAuthenticatedUser();
 
         List<Evaluation> evaluations =
-                evaluationRepository.findAllByUser(user);
+                evaluationRepository.findAllByUserId(user.getId());
 
         long total = evaluations.size();
 
@@ -276,8 +276,7 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     User user = getAuthenticatedUser();
 
-    Evaluation evaluation = evaluationRepository
-            .findByIdAndUser(id, user)
+    Evaluation evaluation = evaluationRepository.findByIdAndUserId(id, user.getId())
             .orElseThrow(() ->
                     new ResourceNotFoundException("Avaliação não encontrada"));
 
@@ -322,8 +321,7 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     User user = getAuthenticatedUser();
 
-    Evaluation evaluation = evaluationRepository
-            .findByIdAndUser(id, user)
+    Evaluation evaluation = evaluationRepository.findByIdAndUserId(id, user.getId())
             .orElseThrow(() ->
                     new ResourceNotFoundException("Avaliação não encontrada"));
 
@@ -345,7 +343,7 @@ public DashboardSummaryDTO getDashboardSummary() {
     User user = getAuthenticatedUser();
 
     List<Evaluation> evaluations =
-            evaluationRepository.findAllByUser(user);
+            evaluationRepository.findAllByUserId(user.getId());
 
     long total = evaluations.size();
 

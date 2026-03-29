@@ -3,6 +3,7 @@ package br.com.marceloscoleso.quality_evaluator_api.controller;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationRequestDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationResponseDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationStatsDTO;
+import br.com.marceloscoleso.quality_evaluator_api.dto.PageResponseDTO;
 import br.com.marceloscoleso.quality_evaluator_api.service.EvaluationService;
 import br.com.marceloscoleso.quality_evaluator_api.model.Classification;
 import br.com.marceloscoleso.quality_evaluator_api.model.Language;
@@ -102,7 +103,7 @@ public class EvaluationController {
             )
     })
     @GetMapping
-    public Page<EvaluationResponseDTO> findAll(
+    public PageResponseDTO<EvaluationResponseDTO> findAll(
             @Parameter(description = "Número da página (começa em 0)", example = "0")
             @RequestParam(defaultValue = "0") int page,
 
@@ -122,7 +123,7 @@ public class EvaluationController {
     );
 
         Pageable pageable = PageRequest.of(page, size, sortObj);
-        return evaluationService.findAll(pageable);
+        return new PageResponseDTO<>(evaluationService.findAll(pageable));
     }
 
     @Operation(
@@ -270,7 +271,7 @@ public void delete(
         )
 })
 @GetMapping("/filter")
-public Page<EvaluationResponseDTO> filter(
+public PageResponseDTO<EvaluationResponseDTO> filter(
         
         @Parameter(description = "Nome do projeto (parcial)", example = "quality")
         @RequestParam(required = false) String projectName,
@@ -325,7 +326,7 @@ Pageable pageable = PageRequest.of(page, size, sortObj);
     
     
 
-    return evaluationService.filter(filter, pageable);
+    return new PageResponseDTO<>(evaluationService.filter(filter, pageable));
 }
 
 @Operation(

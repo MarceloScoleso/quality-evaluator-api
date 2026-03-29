@@ -261,7 +261,9 @@ public class EvaluationServiceImpl implements EvaluationService {
                 total,
                 Math.round(average),
                 excellentCount
+                
         );
+        
     }   
 
     @Override

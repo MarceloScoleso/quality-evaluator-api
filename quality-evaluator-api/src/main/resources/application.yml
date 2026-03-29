@@ -17,10 +17,10 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect  
   
-  openai:
-    api-key: ${OPENAI_API_KEY}
-    model: gpt-4o-mini
-    
+  gemini:
+    api-key: ${GEMINI_API_KEY}
+    model: gemini-2.0-flash
+
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework

@@ -24,8 +24,8 @@ public class DescriptionGeneratorServiceImpl implements DescriptionGeneratorServ
     private final String model;
 
     public DescriptionGeneratorServiceImpl(
-            @Value("${gemini.api-key}") String apiKey,
-            @Value("${gemini.model:gemini-2.0-flash}") String model
+            @Value("${spring.gemini.api-key}") String apiKey,
+            @Value("${spring.gemini.model}") String model
     ) {
         this.apiKey = apiKey;
         this.model = model;

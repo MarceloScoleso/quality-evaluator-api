@@ -76,7 +76,7 @@ public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSou
 
     config.setAllowCredentials(true);
     config.setAllowedOriginPatterns(List.of(
-        "https://code-quality-evaluator-frontend-h2ejp2vad.vercel.app",
+        "https://code-quality-evaluator-frontend-59azxcgth.vercel.app",
         "https://code-quality-evaluator-frontend.vercel.app"
     ));
 

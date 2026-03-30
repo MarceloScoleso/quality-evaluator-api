@@ -38,11 +38,14 @@ import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationFilterDTO;
 @RequestMapping("/api/evaluations")
 public class EvaluationController {
 
-    private final EvaluationService evaluationService;
-
-    public EvaluationController(EvaluationService evaluationService) {
-        this.evaluationService = evaluationService;
-    }
+        private final EvaluationService evaluationService;
+        private String normalizeLang(String lang) {
+                if (lang == null || lang.isBlank()) return "pt";
+                return lang.substring(0, 2).toLowerCase();
+                }
+        public EvaluationController(EvaluationService evaluationService) {
+                this.evaluationService = evaluationService;
+        }
 
     @Operation(
             summary = "Criar uma nova avaliação",
@@ -87,10 +90,12 @@ public class EvaluationController {
                             )
                     )
             )
-            @RequestBody @Valid EvaluationRequestDTO request
-    ) {
-        return evaluationService.create(request);
-    }
+            @RequestBody @Valid EvaluationRequestDTO request,
+        @RequestHeader(value = "Accept-Language", defaultValue = "pt") String lang
+) {
+    lang = normalizeLang(lang);
+    return evaluationService.create(request, lang);
+}
 
     @Operation(
             summary = "Listar avaliações",
@@ -208,9 +213,12 @@ public EvaluationResponseDTO update(
                         )
                 )
         )
-        @RequestBody @Valid EvaluationRequestDTO request
+        @RequestBody @Valid EvaluationRequestDTO request,
+
+        @RequestHeader(value = "Accept-Language", defaultValue = "pt") String lang
 ) {
-        return evaluationService.update(id, request);
+    lang = normalizeLang(lang);
+    return evaluationService.update(id, request, lang);
 }
 
 @Operation(

@@ -12,7 +12,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface EvaluationService {
 
-    EvaluationResponseDTO create(EvaluationRequestDTO dto);
+    EvaluationResponseDTO create(EvaluationRequestDTO dto, String lang);
 
     Page<EvaluationResponseDTO> findAll(Pageable pageable);
 
@@ -21,10 +21,10 @@ public interface EvaluationService {
     EvaluationStatsDTO getStats();
 
     Page<EvaluationResponseDTO> filter(EvaluationFilterDTO filter, Pageable pageable);
-    
+
     byte[] exportCsv(EvaluationFilterDTO filter);
 
-    EvaluationResponseDTO update(Long id, EvaluationRequestDTO dto);
+    EvaluationResponseDTO update(Long id, EvaluationRequestDTO dto, String lang);
 
     void delete(Long id);
 

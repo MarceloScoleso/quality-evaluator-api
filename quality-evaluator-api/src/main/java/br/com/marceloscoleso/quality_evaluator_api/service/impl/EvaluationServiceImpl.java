@@ -75,7 +75,7 @@ public class EvaluationServiceImpl implements EvaluationService {
             @CacheEvict(value = "evaluations", allEntries = true),
             @CacheEvict(value = "evaluationStats", allEntries = true)
     })
-    public EvaluationResponseDTO create(EvaluationRequestDTO dto, String lang) {
+    public EvaluationResponseDTO create(EvaluationRequestDTO dto) {
  
         if (dto.getLanguage() == null) {
             throw new InvalidLanguageException("Linguagem inválida");
@@ -104,6 +104,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                 if (dto.getDescription() != null && !dto.getDescription().trim().isEmpty()) {
                     evaluation.setDescription(dto.getDescription());
                 } else {
+                    String lang = dto.getAiLang() != null ? dto.getAiLang() : "pt";
                     evaluation.setDescription(
                         descriptionGeneratorService.generate(dto, score, classification, lang)
                     );
@@ -260,7 +261,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         @CacheEvict(value = "evaluation", key = "#id + '-' + T(org.springframework.security.core.context.SecurityContextHolder).getContext().authentication.name"),
         @CacheEvict(value = "evaluationStats", allEntries = true)
     })
-    public EvaluationResponseDTO update(Long id, EvaluationRequestDTO dto, String lang) {
+    public EvaluationResponseDTO update(Long id, EvaluationRequestDTO dto) {
  
         User user = getAuthenticatedUser();
  
@@ -284,6 +285,7 @@ public class EvaluationServiceImpl implements EvaluationService {
         if (dto.getDescription() != null && !dto.getDescription().trim().isEmpty()) {
             evaluation.setDescription(dto.getDescription());
         } else {
+            String lang = dto.getAiLang() != null ? dto.getAiLang() : "pt";
             evaluation.setDescription(
                 descriptionGeneratorService.generate(dto, score, classification, lang)
             );

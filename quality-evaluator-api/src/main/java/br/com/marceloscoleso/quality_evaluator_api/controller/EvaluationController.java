@@ -1,5 +1,5 @@
 package br.com.marceloscoleso.quality_evaluator_api.controller;
-
+ 
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationRequestDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationResponseDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationStatsDTO;
@@ -16,20 +16,19 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-
-
+ 
 import java.util.List;
-
+ 
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-
+ 
 import br.com.marceloscoleso.quality_evaluator_api.dto.DashboardSummaryDTO;
 import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationFilterDTO;
-
+ 
 @Tag(
         name = "Evaluations",
         description = "Endpoints para criação e consulta de avaliações de qualidade de projetos"
@@ -37,16 +36,13 @@ import br.com.marceloscoleso.quality_evaluator_api.dto.EvaluationFilterDTO;
 @RestController
 @RequestMapping("/api/evaluations")
 public class EvaluationController {
-
+ 
         private final EvaluationService evaluationService;
-        private String normalizeLang(String lang) {
-                if (lang == null || lang.isBlank()) return "pt";
-                return lang.substring(0, 2).toLowerCase();
-                }
+ 
         public EvaluationController(EvaluationService evaluationService) {
                 this.evaluationService = evaluationService;
         }
-
+ 
     @Operation(
             summary = "Criar uma nova avaliação",
             description = """
@@ -84,19 +80,18 @@ public class EvaluationController {
                                       "complexity": 2,
                                       "hasTests": true,
                                       "usesGit": true,
-                                      "analyzedBy": "Marcelo"
+                                      "analyzedBy": "Marcelo",
+                                      "aiLang": "pt"
                                     }
                                     """
                             )
                     )
             )
-            @RequestBody @Valid EvaluationRequestDTO request,
-        @RequestHeader(value = "Accept-Language", defaultValue = "pt") String lang
-) {
-    lang = normalizeLang(lang);
-    return evaluationService.create(request, lang);
-}
-
+            @RequestBody @Valid EvaluationRequestDTO request
+    ) {
+        return evaluationService.create(request);
+    }
+ 
     @Operation(
             summary = "Listar avaliações",
             description = "Lista todas as avaliações com paginação"
@@ -111,10 +106,10 @@ public class EvaluationController {
     public PageResponseDTO<EvaluationResponseDTO> findAll(
             @Parameter(description = "Número da página (começa em 0)", example = "0")
             @RequestParam(defaultValue = "0") int page,
-
+ 
             @Parameter(description = "Quantidade de registros por página", example = "10")
             @RequestParam(defaultValue = "10") int size,
-
+ 
             @Parameter(
                     description = "Ordenação no formato campo,asc|desc",
                     example = "createdAt,desc"
@@ -126,11 +121,11 @@ public class EvaluationController {
                 ? Sort.Order.asc(java.util.Objects.requireNonNull(sort.replace(",asc", "")))
                 : Sort.Order.desc(java.util.Objects.requireNonNull(sort.replace(",desc", "")))
     );
-
+ 
         Pageable pageable = PageRequest.of(page, size, sortObj);
         return new PageResponseDTO<>(evaluationService.findAll(pageable));
     }
-
+ 
     @Operation(
             summary = "Buscar avaliação por ID",
             description = "Retorna uma avaliação específica pelo seu ID"
@@ -153,15 +148,15 @@ public class EvaluationController {
     ) {
         return evaluationService.findById(id);
     }
-
+ 
     @Operation(
         summary = "Atualizar uma avaliação existente",
         description = """
         Atualiza os dados de uma avaliação existente.
-
+ 
         A pontuação e a classificação são recalculadas automaticamente
         com base nos novos dados informados.
-
+ 
         Apenas o usuário autenticado pode atualizar sua própria avaliação.
         """
 )
@@ -174,24 +169,15 @@ public class EvaluationController {
                         schema = @Schema(implementation = EvaluationResponseDTO.class)
                 )
         ),
-        @ApiResponse(
-                responseCode = "400",
-                description = "Dados inválidos"
-        ),
-        @ApiResponse(
-                responseCode = "404",
-                description = "Avaliação não encontrada"
-        )
+        @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+        @ApiResponse(responseCode = "404", description = "Avaliação não encontrada")
 })
 @PutMapping("/{id}")
 public EvaluationResponseDTO update(
-
-        @Parameter(
-                description = "ID da avaliação a ser atualizada",
-                example = "1"
-        )
+ 
+        @Parameter(description = "ID da avaliação a ser atualizada", example = "1")
         @PathVariable Long id,
-
+ 
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 required = true,
                 description = "Novos dados do projeto",
@@ -207,59 +193,47 @@ public EvaluationResponseDTO update(
                                   "complexity": 3,
                                   "hasTests": true,
                                   "usesGit": true,
-                                  "analyzedBy": "Marcelo"
+                                  "analyzedBy": "Marcelo",
+                                  "aiLang": "en"
                                 }
                                 """
                         )
                 )
         )
-        @RequestBody @Valid EvaluationRequestDTO request,
-
-        @RequestHeader(value = "Accept-Language", defaultValue = "pt") String lang
+        @RequestBody @Valid EvaluationRequestDTO request
 ) {
-    lang = normalizeLang(lang);
-    return evaluationService.update(id, request, lang);
+    return evaluationService.update(id, request);
 }
-
+ 
 @Operation(
         summary = "Excluir uma avaliação",
         description = """
         Remove permanentemente uma avaliação pelo seu ID.
-
+ 
         Apenas o usuário autenticado pode excluir sua própria avaliação.
-
+ 
         Após a exclusão, os dados não poderão ser recuperados.
         """
 )
 @ApiResponses({
-        @ApiResponse(
-                responseCode = "204",
-                description = "Avaliação excluída com sucesso"
-        ),
-        @ApiResponse(
-                responseCode = "404",
-                description = "Avaliação não encontrada"
-        )
+        @ApiResponse(responseCode = "204", description = "Avaliação excluída com sucesso"),
+        @ApiResponse(responseCode = "404", description = "Avaliação não encontrada")
 })
 @DeleteMapping("/{id}")
 @ResponseStatus(HttpStatus.NO_CONTENT)
 public void delete(
-
-        @Parameter(
-                description = "ID da avaliação a ser excluída",
-                example = "1"
-        )
+        @Parameter(description = "ID da avaliação a ser excluída", example = "1")
         @PathVariable Long id
 ) {
         evaluationService.delete(id);
 }
-    
+ 
     @Operation(
         summary = "Filtrar avaliações",
         description = """
         Permite filtrar avaliações utilizando os mesmos critérios
         disponíveis na versão console da aplicação.
-
+ 
         Filtros disponíveis:
         - Nome do projeto
         - Linguagem
@@ -280,32 +254,30 @@ public void delete(
 })
 @GetMapping("/filter")
 public PageResponseDTO<EvaluationResponseDTO> filter(
-        
+ 
         @Parameter(description = "Nome do projeto (parcial)", example = "quality")
         @RequestParam(required = false) String projectName,
-
+ 
         @Parameter(description = "Linguagem do projeto", example = "JAVA")
         @RequestParam(required = false) Language language,
-
+ 
         @Parameter(description = "Score mínimo", example = "60")
         @RequestParam(required = false) Integer minScore,
-
+ 
         @Parameter(description = "Score máximo", example = "90")
         @RequestParam(required = false) Integer maxScore,
-
+ 
         @Parameter(description = "Classificação", example = "BOM")
         @RequestParam(required = false) Classification classification,
-
+ 
         @Parameter(description = "Data inicial (yyyy-MM-dd)", example = "2024-01-01")
         @RequestParam(required = false) String startDate,
-
+ 
         @Parameter(description = "Data final (yyyy-MM-dd)", example = "2024-12-31")
         @RequestParam(required = false) String endDate,
-
+ 
         @RequestParam(defaultValue = "0") int page,
-
         @RequestParam(defaultValue = "6") int size,
-
         @RequestParam(defaultValue = "createdAt,desc") String sort
 ) {
         Sort sortObj = Sort.by(
@@ -313,30 +285,22 @@ public PageResponseDTO<EvaluationResponseDTO> filter(
                 ? Sort.Order.asc(sort.replace(",asc", ""))
                 : Sort.Order.desc(sort.replace(",desc", ""))
 );
-
+ 
 Pageable pageable = PageRequest.of(page, size, sortObj);
-
+ 
     EvaluationFilterDTO filter = new EvaluationFilterDTO();
     filter.setProjectName(projectName);
     filter.setClassification(classification);
     filter.setMinScore(minScore);
     filter.setMaxScore(maxScore);
     filter.setLanguage(language);
-
-    if (startDate != null) {
-        filter.setStartDate(java.time.LocalDate.parse(startDate));
-    }
-
-    if (endDate != null) {
-        filter.setEndDate(java.time.LocalDate.parse(endDate));
-    }
-
-    
-    
-
+ 
+    if (startDate != null) filter.setStartDate(java.time.LocalDate.parse(startDate));
+    if (endDate != null)   filter.setEndDate(java.time.LocalDate.parse(endDate));
+ 
     return new PageResponseDTO<>(evaluationService.filter(filter, pageable));
 }
-
+ 
 @Operation(
         summary = "Estatísticas gerais das avaliações",
         description = "Retorna total de avaliações, média de score e quantidade de classificações EXCELENTE"
@@ -345,7 +309,7 @@ Pageable pageable = PageRequest.of(page, size, sortObj);
 public EvaluationStatsDTO getStats() {
     return evaluationService.getStats();
 }
-
+ 
 @Operation(
         summary = "Dashboard para as avaliações",
         description = "Retorna informações para Dashboard"
@@ -353,81 +317,63 @@ public EvaluationStatsDTO getStats() {
 @GetMapping("/dashboard")
 public DashboardSummaryDTO dashboard() {
     return evaluationService.getDashboardSummary();
-
 }
+ 
 @Operation(
         summary = "Exporta avaliações em CSV com filtros",
         description = """
         Permite exportar avaliações em CSV utilizando os mesmos critérios
         disponíveis na versão console da aplicação.
-
+ 
         Filtros disponíveis (todos opcionais):
         - Nome do projeto (parcial)
         - Linguagem do projeto
         - Score mínimo e máximo
         - Classificação
         - Período de criação (data inicial e final)
-
-        Exemplo de uso:
-        GET /api/evaluations/export/csv?projectName=quality&language=JAVA&minScore=60&maxScore=90&classification=BOM&startDate=2024-01-01&endDate=2024-12-31
         """
 )
 @ApiResponses({
-        @ApiResponse(
-                responseCode = "200",
-                description = "CSV gerado com sucesso",
-                content = @Content(mediaType = "text/csv")
-        ),
-        @ApiResponse(
-                responseCode = "400",
-                description = "Filtros inválidos"
-        ),
-        @ApiResponse(
-                responseCode = "404",
-                description = "Nenhuma avaliação encontrada para exportação"
-        )
-})      
+        @ApiResponse(responseCode = "200", description = "CSV gerado com sucesso",
+                content = @Content(mediaType = "text/csv")),
+        @ApiResponse(responseCode = "400", description = "Filtros inválidos"),
+        @ApiResponse(responseCode = "404", description = "Nenhuma avaliação encontrada para exportação")
+})
 @GetMapping(value = "/export/csv", produces = "text/csv")
 public ResponseEntity<byte[]> exportCsv(
         @Parameter(description = "Nome do projeto (parcial)", example = "quality")
         @RequestParam(required = false) String projectName,
-
+ 
         @Parameter(description = "Linguagem do projeto", example = "JAVA")
         @RequestParam(required = false) Language language,
-
+ 
         @Parameter(description = "Score mínimo", example = "60")
         @RequestParam(required = false) Integer minScore,
-
+ 
         @Parameter(description = "Score máximo", example = "90")
         @RequestParam(required = false) Integer maxScore,
-
+ 
         @Parameter(description = "Classificação", example = "BOM")
         @RequestParam(required = false) Classification classification,
-
+ 
         @Parameter(description = "Data inicial (yyyy-MM-dd)", example = "2024-01-01")
         @RequestParam(required = false) String startDate,
-
+ 
         @Parameter(description = "Data final (yyyy-MM-dd)", example = "2024-12-31")
         @RequestParam(required = false) String endDate
 ) {
-
     EvaluationFilterDTO filter = new EvaluationFilterDTO();
     filter.setProjectName(projectName);
     filter.setLanguage(language);
     filter.setMinScore(minScore);
     filter.setMaxScore(maxScore);
     filter.setClassification(classification);
-
-    if (startDate != null) {
-        filter.setStartDate(java.time.LocalDate.parse(startDate));
-    }
-
-    if (endDate != null) {
-        filter.setEndDate(java.time.LocalDate.parse(endDate));
-    }
-
+ 
+    if (startDate != null) filter.setStartDate(java.time.LocalDate.parse(startDate));
+    if (endDate != null)   filter.setEndDate(java.time.LocalDate.parse(endDate));
+ 
     byte[] csv = evaluationService.exportCsv(filter);
-
+ 
     return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=evaluations.csv")
             .contentType(new MediaType("text", "csv"))

@@ -1,5 +1,7 @@
 package br.com.marceloscoleso.quality_evaluator_api.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import br.com.marceloscoleso.quality_evaluator_api.model.Language;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
@@ -41,6 +43,9 @@ public class EvaluationRequestDTO {
     @Schema(description = "Descrição opcional do projeto", example = "Sistema de avaliação de software")
     private String description;
 
+    @JsonProperty("aiLang")
+    private String aiLang
+;
     public String getProjectName() {
         return projectName;
     }
@@ -104,4 +109,14 @@ public class EvaluationRequestDTO {
     public void setDescription(String description) { 
         this.description = description; 
     }
+
+    public String getAiLang() {
+        return aiLang;
+    }
+
+    public void setAiLang(String aiLang) {
+        this.aiLang = aiLang;
+    }
+
+    
 }

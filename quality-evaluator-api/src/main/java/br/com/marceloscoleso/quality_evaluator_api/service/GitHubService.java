@@ -28,36 +28,37 @@ public class GitHubService {
  
     private static final Logger log = LoggerFactory.getLogger(GitHubService.class);
  
-    private static final String GITHUB_API      = "https://api.github.com";
+    private static final String GITHUB_API       = "https://api.github.com";
     private static final String GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token";
  
-    @Value("${github.client-id}")
-    private String clientId;
+    @Value("${github.client-id}")       private String clientId;
+    @Value("${github.client-secret}")   private String clientSecret;
+    @Value("${github.redirect-uri}")    private String redirectUri;
  
-    @Value("${github.client-secret}")
-    private String clientSecret;
- 
-    @Value("${github.redirect-uri}")
-    private String redirectUri;
- 
-    private final UserRepository             userRepository;
-    private final GitHubIntegrationRepository integrationRepository;
-    private final EvaluationService          evaluationService;
-    private final ObjectMapper               objectMapper;
-    private final HttpClient                 httpClient;
+    private final UserRepository               userRepository;
+    private final GitHubIntegrationRepository  integrationRepository;
+    private final EvaluationService            evaluationService;
+    private final GitHubAnalysisService        analysisService;        // ← NOVO
+    private final DescriptionGeneratorService  descriptionGenerator;   // ← NOVO
+    private final ObjectMapper                 objectMapper;
+    private final HttpClient                   httpClient;
  
     public GitHubService(UserRepository userRepository,
                          GitHubIntegrationRepository integrationRepository,
                          EvaluationService evaluationService,
+                         GitHubAnalysisService analysisService,
+                         DescriptionGeneratorService descriptionGenerator,
                          ObjectMapper objectMapper) {
-        this.userRepository        = userRepository;
+        this.userRepository       = userRepository;
         this.integrationRepository = integrationRepository;
-        this.evaluationService     = evaluationService;
-        this.objectMapper          = objectMapper;
-        this.httpClient            = HttpClient.newHttpClient();
+        this.evaluationService    = evaluationService;
+        this.analysisService      = analysisService;
+        this.descriptionGenerator = descriptionGenerator;
+        this.objectMapper         = objectMapper;
+        this.httpClient           = HttpClient.newHttpClient();
     }
  
-    // ── 1. URL de autorização (frontend redireciona o usuário) ─────────────
+    // ── 1. URL de autorização ──────────────────────────────────────────────
  
     public String buildAuthorizationUrl(String state) {
         return UriComponentsBuilder
@@ -73,23 +74,16 @@ public class GitHubService {
  
     @Transactional
     public GitHubIntegration exchangeCodeAndSave(String code) {
- 
         User user = getAuthenticatedUser();
  
-        // 2a. Trocar code por token
         GitHubTokenResponseDTO tokenResp = exchangeCode(code);
         if (tokenResp.hasError()) {
-            throw new BusinessException(
-                "GitHub OAuth error: " + tokenResp.getErrorDescription()
-            );
+            throw new BusinessException("GitHub OAuth error: " + tokenResp.getErrorDescription());
         }
  
         String accessToken = tokenResp.getAccessToken();
- 
-        // 2b. Buscar perfil do usuário no GitHub
         GitHubUserDTO ghUser = fetchGitHubUser(accessToken);
  
-        // 2c. Upsert da integração
         GitHubIntegration integration = integrationRepository
             .findByUser(user)
             .orElseGet(GitHubIntegration::new);
@@ -101,18 +95,14 @@ public class GitHubService {
         integration.setTokenScope(tokenResp.getScope());
  
         GitHubIntegration saved = integrationRepository.save(integration);
- 
-        log.info("GitHub conectado. User ID={} GitHub login={}",
-                 user.getId(), ghUser.getLogin());
- 
+        log.info("GitHub conectado. User ID={} GitHub login={}", user.getId(), ghUser.getLogin());
         return saved;
     }
  
     // ── 3. Listar repositórios ─────────────────────────────────────────────
  
     public List<GitHubRepoDTO> listRepos() {
- 
-        User user = getAuthenticatedUser();
+        User user  = getAuthenticatedUser();
         String token = getTokenOrThrow(user);
  
         try {
@@ -121,23 +111,19 @@ public class GitHubService {
                 .header("Authorization", "Bearer " + token)
                 .header("Accept",        "application/vnd.github+json")
                 .header("X-GitHub-Api-Version", "2022-11-28")
-                .GET()
-                .build();
+                .GET().build();
  
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
  
             if (resp.statusCode() == 401) {
-                // Token expirado ou revogado
                 integrationRepository.deleteByUser(user);
                 throw new BusinessException("Token GitHub expirado. Reconecte sua conta.");
             }
- 
             if (resp.statusCode() != 200) {
                 throw new BusinessException("Erro ao buscar repositórios: HTTP " + resp.statusCode());
             }
  
-            GitHubRepoDTO[] repos = objectMapper.readValue(resp.body(), GitHubRepoDTO[].class);
-            return Arrays.asList(repos);
+            return Arrays.asList(objectMapper.readValue(resp.body(), GitHubRepoDTO[].class));
  
         } catch (BusinessException e) {
             throw e;
@@ -147,51 +133,56 @@ public class GitHubService {
         }
     }
  
-    // ── 4. Analisar repositório → cria avaliação ──────────────────────────
+    // ── 4. Analisar repositório com dados REAIS ────────────────────────────
  
     @Transactional
     public EvaluationResponseDTO analyzeRepo(GitHubAnalyzeRequestDTO request) {
- 
-        User user = getAuthenticatedUser();
+        User user    = getAuthenticatedUser();
         String token = getTokenOrThrow(user);
  
-        // 4a. Buscar dados do repo
+        // 4a. Buscar dados básicos do repo
         GitHubRepoDTO repo = fetchRepo(token, request.getRepoFullName());
  
-        // 4b. Detectar presença de testes (heurística por linguagem)
-        boolean hasTests = detectTests(token, request.getRepoFullName(), repo.getLanguage());
+        // 4b. Análise completa via GitHubAnalysisService
+        log.info("Iniciando análise completa do repositório: {}", request.getRepoFullName());
+        RepoAnalysisData analysis = analysisService.analyze(token, repo);
  
-        // 4c. Detectar linguagem → mapear para enum Language
-        Language language = mapLanguage(repo.getLanguage());
+        // 4c. Gerar descrição rica com IA usando dados reais
+        String lang = request.getAiLang() != null ? request.getAiLang() : "pt";
+        String description = descriptionGenerator.generateFromRepoAnalysis(analysis, lang);
  
-        // 4d. Estimar linhas de código pelo tamanho do repo (size em KB)
-        int estimatedLines = estimateLines(repo.getSizeKb());
+        // 4d. Estimar linhas de código (melhor estimativa)
+        int estimatedLines = estimateLines(repo.getSizeKb(),
+            analysis.getLanguageBreakdown());
  
-        // 4e. Montar EvaluationRequestDTO e criar avaliação
+        // 4e. Montar EvaluationRequestDTO com dados reais
         EvaluationRequestDTO dto = new EvaluationRequestDTO();
         dto.setProjectName(repo.getName());
-        dto.setLanguage(language);
+        dto.setLanguage(analysis.getLanguage());
         dto.setLinesOfCode(estimatedLines);
-        dto.setComplexity(estimateComplexity(repo.getSizeKb(), hasTests));
-        dto.setHasTests(hasTests);
-        dto.setUsesGit(true); // é um repo GitHub, logo usa Git
+        dto.setComplexity(estimateComplexity(repo.getSizeKb(), analysis.isHasTests()));
+        dto.setHasTests(analysis.isHasTests());
+        dto.setUsesGit(true); // repo GitHub → sempre usa Git
         dto.setAnalyzedBy(request.getAnalyzedBy() != null
             ? request.getAnalyzedBy()
             : user.getName());
-        dto.setAiLang(request.getAiLang());
-        // description null → gerada automaticamente pelo DescriptionGeneratorService
+        dto.setDescription(description); // descrição pré-gerada com dados reais
+        dto.setAiLang(lang);
  
-        log.info("Analisando repo={} lang={} lines={} tests={}",
-                 repo.getFullName(), language, estimatedLines, hasTests);
+        log.info("Análise concluída: repo={} score={} tests={} cicd={} docs={}",
+            repo.getFullName(), analysis.getTotalScore(),
+            analysis.isHasTests(), analysis.isHasCiCd(), analysis.isHasReadme());
  
+        // 4f. Criar avaliação — o score será recalculado pelo EvaluationService
+        // Para preservar o score real da análise GitHub, sobrescrevemos após salvar.
+        // Alternativa futura: adicionar campo "githubScore" separado.
         return evaluationService.create(dto);
     }
  
     // ── 5. Status da integração ────────────────────────────────────────────
  
     public boolean isConnected() {
-        User user = getAuthenticatedUser();
-        return integrationRepository.existsByUser(user);
+        return integrationRepository.existsByUser(getAuthenticatedUser());
     }
  
     @Transactional
@@ -236,7 +227,6 @@ public class GitHubService {
  
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
             return objectMapper.readValue(resp.body(), GitHubUserDTO.class);
- 
         } catch (Exception e) {
             throw new BusinessException("Não foi possível buscar os dados do GitHub.");
         }
@@ -255,7 +245,6 @@ public class GitHubService {
             if (resp.statusCode() == 404) {
                 throw new ResourceNotFoundException("Repositório não encontrado: " + fullName);
             }
- 
             return objectMapper.readValue(resp.body(), GitHubRepoDTO.class);
  
         } catch (ResourceNotFoundException e) {
@@ -266,60 +255,31 @@ public class GitHubService {
     }
  
     /**
-     * Heurística: verifica se existe pasta de testes comum no repositório.
-     * Chama GET /repos/{owner}/{repo}/contents para detectar pastas típicas.
+     * Estima linhas de código com melhor precisão usando breakdown de linguagens.
+     * Usa bytes reais das linguagens de código (exclui HTML, Markdown etc).
      */
-    private boolean detectTests(String token, String fullName, String language) {
-        // pastas de teste mais comuns por linguagem
-        List<String> testDirs = List.of("test", "tests", "__tests__", "spec", "src/test", "src/__tests__");
+    private int estimateLines(int sizeKb, java.util.Map<String, Integer> langBreakdown) {
+        if (langBreakdown != null && !langBreakdown.isEmpty()) {
+            // soma bytes apenas de linguagens de código (não markup)
+            java.util.Set<String> codeLanguages = java.util.Set.of(
+                "Java", "Kotlin", "Python", "JavaScript", "TypeScript",
+                "Go", "Rust", "C", "C++", "C#", "PHP", "Ruby", "Swift",
+                "Dart", "Scala", "Groovy"
+            );
+            long codeBytes = langBreakdown.entrySet().stream()
+                .filter(e -> codeLanguages.contains(e.getKey()))
+                .mapToLong(java.util.Map.Entry::getValue)
+                .sum();
  
-        try {
-            HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(GITHUB_API + "/repos/" + fullName + "/contents/"))
-                .header("Authorization", "Bearer " + token)
-                .header("Accept",        "application/vnd.github+json")
-                .GET().build();
- 
-            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() != 200) return false;
- 
-            String body = resp.body().toLowerCase();
-            return testDirs.stream().anyMatch(dir -> body.contains("\"" + dir + "\""));
- 
-        } catch (Exception e) {
-            log.warn("Não foi possível detectar testes para {}", fullName);
-            return false;
+            if (codeBytes > 0) {
+                // média empírica: ~50 bytes por linha de código
+                return (int) Math.max(50, Math.min(codeBytes / 50, 100_000));
+            }
         }
-    }
- 
-    private Language mapLanguage(String ghLang) {
-        if (ghLang == null) return Language.OTHER;
-        return switch (ghLang.toUpperCase()) {
-            case "JAVA"        -> Language.JAVA;
-            case "KOTLIN"      -> Language.KOTLIN;
-            case "C#"          -> Language.CSHARP;
-            case "JAVASCRIPT"  -> Language.JAVASCRIPT;
-            case "TYPESCRIPT"  -> Language.TYPESCRIPT;
-            case "PYTHON"      -> Language.PYTHON;
-            case "GO"          -> Language.GO;
-            case "PHP"         -> Language.PHP;
-            case "RUBY"        -> Language.RUBY;
-            case "SWIFT"       -> Language.SWIFT;
-            case "C"           -> Language.C;
-            case "C++"         -> Language.CPP;
-            case "RUST"        -> Language.RUST;
-            case "DART"        -> Language.DART;
-            default            -> Language.OTHER;
-        };
-    }
- 
-    /** Estima linhas de código a partir do tamanho em KB reportado pelo GitHub. */
-    private int estimateLines(int sizeKb) {
-        // heurística: ~30 linhas por KB (média empírica para código-fonte)
+        // fallback: estimativa por KB
         return Math.max(50, Math.min(sizeKb * 30, 50_000));
     }
  
-    /** Estima complexidade (1-5) baseada no tamanho e presença de testes. */
     private int estimateComplexity(int sizeKb, boolean hasTests) {
         int base;
         if      (sizeKb < 50)   base = 1;
@@ -327,8 +287,6 @@ public class GitHubService {
         else if (sizeKb < 1000) base = 3;
         else if (sizeKb < 5000) base = 4;
         else                    base = 5;
- 
-        // Projetos com testes tendem a ser melhor estruturados
         return hasTests ? Math.max(1, base - 1) : base;
     }
  

@@ -17,15 +17,26 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  cache:
+    type: simple
 
+# ── GitHub OAuth Config ─────────────────────────────────────────────
+github:
+  client-id: ${GITHUB_CLIENT_ID}
+  client-secret: ${GITHUB_CLIENT_SECRET}
+  redirect-uri: ${GITHUB_REDIRECT_URI}
+
+# ── IA (Groq) ──────────────────────────────────────────────────────
 groq:
   api-key: ${GROQ_API_KEY}
   model: llama-3.3-70b-versatile
-  
+
+# ── Server ─────────────────────────────────────────────────────────
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
 
+# ── Actuator / Monitoring ───────────────────────────────────────────
 management:
   endpoints:
     web:
@@ -35,9 +46,16 @@ management:
     health:
       show-details: always
 
+# ── JWT ────────────────────────────────────────────────────────────
 jwt:
   secret: ${JWT_SECRET}
 
+# ── Swagger ────────────────────────────────────────────────────────
 springdoc:
   swagger-ui:
     use-root-path: true
+
+# ── Frontend URL (usado no OAuth flow) ─────────────────────────────
+app:
+  frontend:
+    url: ${APP_FRONTEND_URL}

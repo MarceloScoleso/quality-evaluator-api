@@ -44,7 +44,17 @@ public class EvaluationRequestDTO {
     private String description;
 
     @JsonProperty("aiLang")
-    private String aiLang
+    private String aiLang;
+
+    public Integer getScore() {
+        return score;
+    }
+
+    public void setScore(Integer score) {
+        this.score = score;
+    }
+
+    private Integer score;
 ;
     public String getProjectName() {
         return projectName;

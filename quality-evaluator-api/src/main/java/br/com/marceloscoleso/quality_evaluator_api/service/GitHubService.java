@@ -168,7 +168,7 @@ public class GitHubService {
             : user.getName());
         dto.setDescription(description); // descrição pré-gerada com dados reais
         dto.setAiLang(lang);
- 
+        dto.setScore(analysis.getTotalScore());
         log.info("Análise concluída: repo={} score={} tests={} cicd={} docs={}",
             repo.getFullName(), analysis.getTotalScore(),
             analysis.isHasTests(), analysis.isHasCiCd(), analysis.isHasReadme());

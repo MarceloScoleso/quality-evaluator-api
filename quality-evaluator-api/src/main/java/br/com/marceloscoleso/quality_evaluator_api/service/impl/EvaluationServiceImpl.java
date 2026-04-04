@@ -86,8 +86,17 @@ public class EvaluationServiceImpl implements EvaluationService {
             .register(meterRegistry)
             .record(() -> {
  
-                int score = calculateScore(dto);
-                Classification classification = classify(score);
+                int score;
+
+if (dto.getScore() != null) {
+    // 🔥 veio do GitHub
+    score = dto.getScore();
+} else {
+    // 🧾 avaliação manual
+    score = calculateScore(dto);
+}
+
+Classification classification = classify(score);
  
                 Evaluation evaluation = new Evaluation();
                 evaluation.setProjectName(dto.getProjectName());
@@ -269,9 +278,17 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Avaliação não encontrada"));
  
-        int score = calculateScore(dto);
-        Classification classification = classify(score);
- 
+        int score;
+
+if (dto.getScore() != null) {
+    // 🔥 veio do GitHub
+    score = dto.getScore();
+} else {
+    // 🧾 avaliação manual
+    score = calculateScore(dto);
+}
+
+Classification classification = classify(score);
         evaluation.setProjectName(dto.getProjectName());
         evaluation.setLanguage(dto.getLanguage());
         evaluation.setLinesOfCode(dto.getLinesOfCode());
